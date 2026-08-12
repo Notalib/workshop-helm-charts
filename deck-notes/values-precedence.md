@@ -92,3 +92,7 @@ helm get values <release> --all    # the same, merged with chart defaults
   That's why the shared Secret name in the reference chart is a *convention* derived from
   `.Release.Name` in both charts, rather than something passed. Worth showing — it's a real
   limitation people hit fast.
+
+---
+
+**Depth for prep / for anyone who asks:** [BEST-PRACTICES.md §2 (values.yaml is your API) and §8 (dependencies)](../BEST-PRACTICES.md#2-valuesyaml-is-your-api)

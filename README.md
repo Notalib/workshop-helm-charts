@@ -200,19 +200,20 @@ Before reaching for the solutions branch, these resolve nearly everything:
 
 ## Best practices
 
-- **`values.yaml` is an API, not a config file.** Every key is a promise to whoever installs your
-  chart. Renaming one is a breaking change — which is what the chart version is for.
-- **Derive object names from the release name** (`_helpers.tpl`), so two releases can coexist.
-- **Never put a changing value in a selector.** Deployment selectors are immutable; a version label
-  in there makes your chart permanently un-upgradeable.
-- **Not everything should be configurable.** A knob that can only break things is a lie — see why
-  `charts/postgres` has no `replicaCount`.
-- **Credentials never go in a values file.** Take a Secret *name* (`existingSecret`) and let
-  External Secrets / SOPS / sealed-secrets put the value there.
-- **`required` and `values.schema.json`** — fail at install, not at 3am.
-- **Pin your dependencies**, chart versions and image tags alike. Same rule as workshop #1.
-- **Bump `version` on every chart change.** A chart version must mean exactly one thing forever.
-- **`helm lint` in CI**, and `helm diff` before you upgrade anything you care about.
+They live in one place so they can't drift: **[BEST-PRACTICES.md](./BEST-PRACTICES.md)**. It opens
+with a 60-second table and closes with a pre-flight checklist you can run against a real PR.
+
+The three worth carrying in your head, because they're the expensive ones:
+
+- **Never put a changing value in a selector**
+  ([§6](./BEST-PRACTICES.md#6-naming-and-labels)) — Deployment selectors are immutable, so a version
+  label in there makes your chart permanently un-upgradeable. This is the only mistake on the list
+  that **cannot be fixed forward**.
+- **Credentials never go in a values file**
+  ([§5](./BEST-PRACTICES.md#5-secrets)) — take a Secret *name*, not a password. Values files get
+  committed, diffed, pasted into tickets and fed to LLMs.
+- **`values.yaml` is an API** ([§2](./BEST-PRACTICES.md#2-valuesyaml-is-your-api)) — every key is a
+  promise, and renaming one is a breaking change for everyone who installs your chart.
 
 ## Bonus
 

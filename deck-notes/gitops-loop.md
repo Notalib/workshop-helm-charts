@@ -74,3 +74,7 @@ upgrades, who?* — and it's the honest boundary of what this workshop taught.
 Then hand over to the open lab: **the point of the last 50 minutes is finding out what stands
 between your system and this diagram.** The blockers they write down are the input for what the
 next workshop covers.
+
+---
+
+**Depth for prep / for anyone who asks:** [BEST-PRACTICES.md §5 (secrets) and §9 (operating a chart)](../BEST-PRACTICES.md#5-secrets)
