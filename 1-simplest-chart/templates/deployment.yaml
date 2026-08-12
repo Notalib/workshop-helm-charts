@@ -1,4 +1,18 @@
-﻿apiVersion: apps/v1
+﻿{{/*
+⚠️  DELIBERATELY WRONG — do not copy this into a real chart.
+
+The object name below is HARDCODED, which means two releases of this chart
+collide in one namespace (TASK 6 makes you hit that on purpose). Real charts
+derive names from .Release.Name via a fullname helper — see
+../2-gateway-chart/templates/_helpers.tpl, and BEST-PRACTICES.md §6.
+
+Same for the literal port 80 in the probes below: a real chart would reference
+the container's NAMED port so there's one number instead of four.
+
+Everything is spelled out the long way here so this chart stays readable with
+no helpers at all. That's the only reason.
+*/}}
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: simplest-nginx

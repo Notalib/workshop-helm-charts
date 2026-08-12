@@ -1,0 +1,22 @@
+apiVersion: v2
+name: greetings
+description: The Spring Boot + Postgres app from workshop #1, hand-wired in workshop #2 module 5, now one chart.
+type: application
+
+# version = this chart. appVersion = the app inside it. See BEST-PRACTICES.md §3.
+version: 1.0.0
+appVersion: "1.2"
+
+keywords:
+  - workshop
+  - example
+maintainers:
+  - name: Daniel Freiling
+
+# `condition` makes the bundled database optional: --set postgres.enabled=false
+# and point database.hostOverride at a managed Postgres instead.
+dependencies:
+  - name: postgres
+    version: "1.0.0"
+    repository: "file://charts/postgres"
+    condition: postgres.enabled

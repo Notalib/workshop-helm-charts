@@ -1,0 +1,67 @@
+# Defaults for the gateway chart — and the chart's public API.
+#
+# Read this file first. Every key here is something the chart PROMISES to make
+# configurable. Your job in TASK 3 is to make nine of those promises true.
+#
+# BEST-PRACTICES.md: document every value with a comment that starts with the
+# property name, so the file stays greppable.
+
+# replicaCount — how many gateway Pods to run. The gateway is stateless, so
+# this can be any number.
+replicaCount: 1
+
+# nameOverride — replaces the chart name inside generated object names.
+nameOverride: ""
+# fullnameOverride — replaces the generated object name prefix entirely. See
+# _helpers.tpl for how both are used.
+fullnameOverride: ""
+
+image:
+  # image.nginx — the gateway container image. Pinned, never `:latest`, so a
+  # rollback goes back to the same bits.
+  nginx: nginx:alpine
+  # image.echo — the backend container image. hashicorp/http-echo just returns a
+  # fixed string, which is all we need to prove routing works.
+  echo: hashicorp/http-echo:1.0.0
+
+service:
+  # service.port — the port the gateway is reachable on. Note this one value has
+  # to hold true in several places at once; finding them all is the exercise.
+  port: 80
+
+ingress:
+  # ingress.enabled — set false to skip the Ingress entirely and use
+  # `kubectl port-forward` instead.
+  enabled: true
+  # ingress.className — which ingress controller should claim this Ingress.
+  # Rancher Desktop / k3d ship Traefik. On kind + ingress-nginx use "nginx".
+  className: traefik
+  # ingress.host — the hostname the app answers on. Hardcoding a hostname in a
+  # template is the most common chart mistake there is.
+  host: gateway.localhost
+  # ingress.tls — request TLS. The chart does NOT create the certificate Secret;
+  # in a real cluster cert-manager does.
+  tls: false
+  # ingress.annotations — extra Ingress annotations, e.g. a cert-manager issuer.
+  annotations: {}
+
+api:
+  # api.enabled — whether to route /api to the backend container at all. With
+  # this off the backend is unreachable and /api hits the 404 dead-end.
+  enabled: true
+  # api.publicPath — the external path the backend is served under. nginx strips
+  # this prefix before proxying, so the backend never sees it.
+  publicPath: /api
+
+backend:
+  # backend.port — the port the backend listens on, and therefore the port nginx
+  # must proxy to.
+  port: 5678
+  # backend.text — what the backend replies with. Handy for telling two
+  # environments apart at a glance.
+  text: "Hello from backend"
+
+# NOT exposed here, deliberately:
+#   resources — see BONUS 6. Every production chart should template CPU/memory
+#               requests and limits; this one leaves them out to keep the
+#               exercise focused. edu-greetings-chart shows the pattern.

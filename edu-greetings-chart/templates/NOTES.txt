@@ -1,0 +1,40 @@
+🎉  {{ .Chart.Name }} {{ .Chart.Version }} installed as release "{{ .Release.Name }}"
+    in namespace "{{ .Release.Namespace }}" (revision {{ .Release.Revision }}).
+
+Backend image: {{ include "greetings.image" . }}
+Database host: {{ include "greetings.databaseHost" . }}{{ if not .Values.postgres.enabled }}  (external — subchart disabled){{ end }}
+Replicas:      {{ .Values.replicaCount }}
+
+{{- if .Values.ingress.enabled }}
+
+Reach the app:
+  curl -H "Host: {{ .Values.ingress.host }}" http{{ if .Values.ingress.tls }}s{{ end }}://127.0.0.1/greetings
+
+  Or add "{{ .Values.ingress.host }}" to /etc/hosts and open it in a browser:
+    http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.host }}/greetings
+{{- if .Values.ingress.tls }}
+
+  ⚠️  ingress.tls is on, so Traefik expects the Secret
+      "{{ include "greetings.fullname" . }}-tls" to exist. This chart does NOT create it —
+      that's cert-manager's job. Expect a certificate warning until it does.
+{{- end }}
+{{- else }}
+
+Ingress is disabled, so port-forward instead:
+  kubectl port-forward -n {{ .Release.Namespace }} deploy/{{ include "greetings.fullname" . }} 8080:{{ .Values.service.port }}
+  curl http://localhost:8080/greetings
+{{- end }}
+
+Verify the release actually works:
+  helm test {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+{{- if .Values.migration.enabled }}
+
+The schema migration ran as a hook Job. Read its log:
+  kubectl logs -n {{ .Release.Namespace }} job/{{ include "greetings.fullname" . }}-migrate
+{{- end }}
+
+Inspect and operate:
+  helm get values {{ .Release.Name }} -n {{ .Release.Namespace }}
+  helm history {{ .Release.Name }} -n {{ .Release.Namespace }}
+  helm rollback {{ .Release.Name }} -n {{ .Release.Namespace }}

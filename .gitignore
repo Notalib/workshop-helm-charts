@@ -1,0 +1,11 @@
+# Packaged charts — build artifacts, not sources.
+*.tgz
+
+# Dependencies vendored by `helm dependency update`. The source subchart lives
+# in edu-greetings-chart/charts/postgres/ and Helm prefers it over the packaged
+# copy, so the .tgz is redundant noise that only goes stale.
+edu-greetings-chart/charts/*.tgz
+
+# Chart.lock adds nothing for a file:// dependency — the source subchart is in
+# this repo, so there is no version to pin, only a digest to drift.
+edu-greetings-chart/Chart.lock

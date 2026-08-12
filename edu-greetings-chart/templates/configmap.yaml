@@ -1,0 +1,15 @@
+{{/*
+Non-secret config. Compare with workshop #2 module 5's configmap.yaml: the
+values that were typed in by hand there are computed here.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "greetings.fullname" . }}-config
+  labels:
+    {{- include "greetings.labels" . | nindent 4 }}
+data:
+  POSTGRES_DB: {{ .Values.global.database.name | quote }}
+  # NOT hand-typed — the same helper the subchart's Service name comes from.
+  POSTGRES_HOST: {{ include "greetings.databaseHost" . | quote }}
+  POSTGRES_PORT: "5432"

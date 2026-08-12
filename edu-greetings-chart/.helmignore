@@ -1,0 +1,15 @@
+# Patterns excluded from `helm package`, like .dockerignore for charts.
+# Without this, editor swap files and OS cruft end up inside your .tgz.
+.DS_Store
+.git/
+.gitignore
+*.swp
+*.bak
+*.tmp
+*.orig
+*~
+# Values files for specific environments are NOT part of the package — they
+# belong to whoever deploys it, not to the chart.
+values-dev.y*ml
+values-prod.y*ml
+values-broken.y*ml

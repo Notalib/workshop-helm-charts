@@ -9,6 +9,6 @@ Exec into Deployment:
   kubectl exec -it deploy/simplest-nginx -n {{ .Release.Namespace }} -- /bin/sh
 
 Possible values:
-  `imageTag` changes the nginx tag used (default: alpine)
+  `imageTag` changes the nginx tag used (default: stable)
   `overrideHtml` flag enables overriding the default nginx HTML file (default: false)
   `myName` changes the name used in the contents of the overridden HTML.

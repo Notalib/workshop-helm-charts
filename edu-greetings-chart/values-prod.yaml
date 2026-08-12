@@ -1,0 +1,56 @@
+# "Production" environment.
+#
+# Read this next to values-dev.yaml — the diff between them is the entire
+# difference between two environments. That diff being small, reviewable and in
+# git is the actual payoff of packaging your system as a chart.
+#
+#   helm upgrade --install greetings ./edu-greetings-chart -f values-prod.yaml
+
+# Stateless backend, so scale out freely.
+replicaCount: 3
+
+ingress:
+  host: greetings.kb.dk
+  tls: true
+  annotations:
+    # Real clusters get their certificates issued automatically. The chart
+    # doesn't create the TLS Secret — cert-manager sees this annotation and
+    # does it.
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    memory: 2Gi
+
+database:
+  # ⚠️  NO PASSWORD HERE. This is the point of existingSecret: production
+  #     credentials are created out-of-band (Vault / External Secrets / sealed
+  #     secrets) and this file only names them. A prod values file in git must
+  #     never contain a credential.
+  existingSecret: greetings-db-credentials
+  existingSecretKey: password
+
+postgres:
+  # In a real deployment you would turn the bundled Postgres OFF and point at a
+  # managed database with backups, failover and someone else on call:
+  #
+  #   postgres:
+  #     enabled: false
+  #   database:
+  #     hostOverride: greetings-db.postgres.database.azure.com
+  #
+  # Left enabled here so the file still installs during the workshop.
+  enabled: true
+  # Must match database.existingSecret above — the two charts find the Secret by
+  # the same convention, so both have to be told about the override.
+  auth:
+    existingSecret: greetings-db-credentials
+    existingSecretKey: password
+  persistence:
+    size: 20Gi
+    # Name the class explicitly in prod. Relying on "whatever the default is"
+    # means your storage tier changes when a cluster admin edits a StorageClass.
+    storageClass: longhorn

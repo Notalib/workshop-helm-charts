@@ -1,0 +1,98 @@
+# Defaults for the greetings chart.
+#
+# This file is the chart's PUBLIC API. Every key here is a promise to whoever
+# installs it; anything not here is not configurable. Design it deliberately —
+# renaming a value is a breaking change for your users.
+#
+# Types and ranges are enforced by values.schema.json, so a typo fails at
+# install time instead of producing a broken Deployment.
+
+# ---------------------------------------------------------------------------
+# `global` is the ONE part of a values file that both this chart and every
+# subchart can read. Anything the two tiers must agree on belongs here — put it
+# anywhere else and you're maintaining the same value in two places, which is
+# the bug module 5 warned about ("three things must agree").
+# ---------------------------------------------------------------------------
+global:
+  database:
+    name: example
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/notalib/workshop-containerisation/edu-spring-boot
+  # Defaults to .Chart.AppVersion when empty — so the chart and the image it
+  # deploys can't drift apart by accident.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+service:
+  port: 8080
+
+ingress:
+  enabled: true
+  # Rancher Desktop / k3d ship Traefik. On kind + ingress-nginx use "nginx".
+  className: traefik
+  host: greetings.localhost
+  tls: false
+  annotations: {}
+
+database:
+  # The database NAME lives in global.database.name above, because the Postgres
+  # subchart needs it too.
+  #
+  # Leave hostOverride empty to use the bundled Postgres subchart. Set it to
+  # point at an external database (managed Postgres, another namespace,
+  # whatever) — then also set postgres.enabled=false.
+  hostOverride: ""
+  # ⚠️  WORKSHOP PLACEHOLDER ONLY, and a deliberate violation of the rule in
+  #     BEST-PRACTICES.md §5 so the chart installs with no setup. A real
+  #     password does not belong in a values file, because values files live in
+  #     git and get pasted into tickets.
+  #     values-prod.yaml shows the correct version: it names an existing Secret
+  #     and renders no Secret of its own.
+  #     Production options, roughly in order of how much you'll enjoy them:
+  #       - External Secrets Operator (pulls from Vault/Azure Key Vault/AWS SM)
+  #       - Sealed Secrets or SOPS (encrypted values, safe to commit)
+  #       - an existing Secret you reference by name and never template
+  #     See database.existingSecret below for the last one.
+  password: workshop-not-a-real-password
+  # If set, the chart uses this pre-existing Secret and ignores the password
+  # above — the escape hatch every serious chart offers.
+  existingSecret: ""
+  existingSecretKey: password
+
+# Schema migration, run as a Helm hook Job. See templates/job-migrate.yaml for
+# why this is a hook and not an init container.
+migration:
+  enabled: true
+
+# Resource requests/limits. Deliberately modest so this runs on a laptop.
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    memory: 1Gi
+
+# ---------------------------------------------------------------------------
+# Subchart values. Everything under `postgres:` is passed to the postgres
+# subchart, NOT read by this chart's own templates. That is how a parent
+# configures a child.
+# ---------------------------------------------------------------------------
+postgres:
+  enabled: true
+  # Pins the subchart's object names to "database" — the exact Service name you
+  # created by hand in workshop #2 module 5, so the DNS name the backend dials
+  # is unchanged. Without this the Service would be "<release>-postgres" and
+  # the parent would have to guess it.
+  fullnameOverride: database
+  image:
+    repository: postgres
+    tag: "18.3-alpine3.23"
+  persistence:
+    enabled: true
+    size: 1Gi
+    # Empty = use the cluster's default StorageClass. Rancher Desktop ships
+    # `local-path`. Set explicitly if your cluster has several defaults.
+    storageClass: ""

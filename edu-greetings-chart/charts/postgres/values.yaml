@@ -1,0 +1,40 @@
+# Subchart defaults.
+#
+# These are overridden from the PARENT chart's values.yaml, under a `postgres:`
+# key. A subchart never reads the parent's values directly — the parent hands
+# down exactly what it chooses to. That isolation is the point of subcharts.
+
+enabled: true
+
+fullnameOverride: ""
+nameOverride: ""
+
+image:
+  repository: postgres
+  tag: "18.3-alpine3.23"
+  pullPolicy: IfNotPresent
+
+service:
+  port: 5432
+
+persistence:
+  enabled: true
+  size: 1Gi
+  # Empty = the cluster's default StorageClass.
+  storageClass: ""
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# ---------------------------------------------------------------------------
+# Set by the parent chart so both tiers agree on the database name and
+# credentials. The parent passes these down explicitly in its values.yaml
+# rather than the subchart reaching upward — see `global` in the Helm docs for
+# the other way of doing this.
+# ---------------------------------------------------------------------------
+auth:
+  database: example
+  existingSecret: ""
+  existingSecretKey: password

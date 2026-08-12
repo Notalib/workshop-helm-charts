@@ -1,0 +1,9 @@
+apiVersion: v2
+name: postgres
+description: Minimal Postgres for the workshop — Deployment, Service and PVC, as hand-written in workshop #2 module 5.
+type: application
+version: 1.0.0
+appVersion: "18.3"
+
+# Not production-grade: a real database wants a StatefulSet, backups and a real
+# StorageClass. See BONUS 1 in the parent chart's README.

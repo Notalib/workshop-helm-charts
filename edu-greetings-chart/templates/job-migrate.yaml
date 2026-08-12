@@ -1,0 +1,75 @@
+{{/*
+Schema migration as a Helm HOOK — module 5's BONUS 4 initContainer, promoted.
+An initContainer re-runs on every Pod start in every replica; a hook runs once
+per release operation, which is what a migration wants.
+
+  post-install   NOT pre-install: on pre-install the database doesn't exist yet,
+                 so this Job waits for it until --timeout kills the install.
+  pre-upgrade    migrate BEFORE the new code rolls out. If it fails, the upgrade
+                 is abandoned and the running release is untouched.
+  delete policy  before-hook-creation only. Adding `hook-succeeded` deletes the
+                 Job on success, and with it the log of what changed.
+
+Why each of those, at length: ../README.md
+*/}}
+{{- if .Values.migration.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "greetings.fullname" . }}-migrate
+  labels:
+    {{- include "greetings.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      name: {{ include "greetings.fullname" . }}-migrate
+      labels:
+        {{- include "greetings.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+          env:
+            - name: POSTGRES_HOST
+              value: {{ include "greetings.databaseHost" . | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.global.database.name | quote }}
+            # PGPASSWORD rather than a password inside the connection URI —
+            # a URI would show up in `ps` output and in psql's history.
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "greetings.secretName" . }}
+                  key: {{ include "greetings.secretKey" . }}
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              echo "waiting for postgres at $POSTGRES_HOST..."
+              until pg_isready -h "$POSTGRES_HOST" -p 5432 -U postgres; do
+                echo "  not ready yet, retrying"; sleep 2
+              done
+              echo "applying schema"
+              # Both statements are idempotent, which is what makes it safe to
+              # re-run on every upgrade: CREATE TABLE IF NOT EXISTS and
+              # ON CONFLICT DO NOTHING.
+              psql -h "$POSTGRES_HOST" -U postgres -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 <<'SQL'
+                CREATE TABLE IF NOT EXISTS GREETINGS (
+                    id UUID PRIMARY KEY,
+                    name varchar(50) NOT NULL UNIQUE
+                );
+                INSERT INTO GREETINGS(id, name)
+                VALUES (gen_random_uuid(), 'Docker container'),
+                       (gen_random_uuid(), 'An awesome workshop'),
+                       (gen_random_uuid(), 'The Future')
+                ON CONFLICT (name) DO NOTHING;
+              SQL
+              echo "migration complete"
+{{- end }}

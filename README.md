@@ -1,90 +1,229 @@
-﻿# Helm chart assignment
+# Exercises for Helm Charts Workshop
 
-## Tools
+Hands-on exercises for the Helm workshop — the third in the series, after
+[Containerisation](https://github.com/notalib/workshop-containerisation) and
+[Kubernetes](https://github.com/notalib/workshop-kubernetes).
 
-- [Helm CLI tool](https://helm.sh)
-- Recommended editor: Visual Studio Code + Kubernetes extension
+Workshop #1 built *one container*. Workshop #2 got containers **running, scaled and reachable** on
+a cluster — ending with a whole system wired together by hand, four YAML files at a time. This one
+is about **packaging that system**: one versioned, installable, configurable artifact instead of a
+directory of manifests you apply in the right order and hope you remember.
+
+Workshop #2 closed with a promise, and this repo keeps it:
+
+> *"Remember the four files you wrote in module 5? Next workshop we'll turn that system into a
+> chart — templated, versioned, installable in dev/staging/prod with one command and a values file
+> per environment."*
+
+That chart is [`edu-greetings-chart/`](./edu-greetings-chart/README.md).
+
+## Repo layout
+
+- [**BEST-PRACTICES.md**](./BEST-PRACTICES.md) — the checklist for writing charts you'll still like
+  in a year. Read it once, then keep it open during module 3.
+- [deck-outline.md](./deck-outline.md) — the theory, slide by slide. `Helm_workshop.pptx` is built
+  from it.
+- [setup/](./setup/README.md) — **do this first.** Ten minutes, before the workshop starts.
+- [cli-demo/](./cli-demo/README.md) — the opening live demo: a whole system in one command.
+- `<num>-<name>/` — exercise modules for **you**, in order. Each has a `README.md` with `TASK`
+  blocks and charts with `TODO`s to fill in.
+- `edu-<name>/` — finished examples to read and run, not exercises.
+- [live-demo/](./live-demo/README.md) — facilitator cheat-sheet for the real cluster.
+- [deck-notes/](./deck-notes/) — supporting notes and diagrams for the presentation.
+
+## Prerequisites
+
+🤓 Skip these if you already have a working local Kubernetes and Helm 4. Just check
+[setup](./setup/README.md) **section 2** — the one about which cluster you're pointed at.
+
+- The same local cluster as workshop #2 — **Rancher Desktop** recommended. It ships a container
+  runtime, `kubectl`, **`helm`**, a Traefik ingress controller and a `local-path` storage class.
+- `~/.rd/bin` on your `PATH`.
+- `kubectl get nodes` shows one `Ready` node (your machine).
+
+### CLI tools
+
+⚠️ Make sure these work in your terminal ⚠️
+
+- `kubectl` (included with Rancher Desktop)
+- **`helm` — v4.x** (included with Rancher Desktop). Check with `helm version`.
+- Optional: [`helm diff`](https://github.com/databus23/helm-diff) plugin —
+  `helm plugin install https://github.com/databus23/helm-diff`
+- Optional: [k9s](https://k9scli.io/topics/install/). Still priceless.
+
+> ### ⚠️ Helm 4, not Helm 3
+>
+> Rancher Desktop now ships **Helm 4**, and most Helm material online is Helm 3. A few things were
+> renamed — the one you'll hit is **`--atomic`, which is now `--rollback-on-failure`** (the old flag
+> still works but warns). `--dry-run` also takes `client`/`server` now instead of being a boolean.
+>
+> When a blog post and this repo disagree, `helm <command> --help` settles it. That habit is worth
+> more than memorising either.
+
+### Shell completion
+
+```bash
+source <(helm completion bash)   # or zsh
+```
+
+### IDE support
+
+⚠️ Strongly recommended — Go templates inside YAML are unpleasant without help ⚠️
+
+**VS Code**
+- Kubernetes by Microsoft
+  [link](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools)
+- **Helm Intellisense** by Tim Koehler
+  [link](https://marketplace.visualstudio.com/items?itemName=Tim-Koehler.helm-intellisense) —
+  autocompletes `.Values.` from your `values.yaml`. The one that actually helps.
+- YAML by Red Hat [link](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
+
+**IntelliJ IDEA**
+- Kubernetes by JetBrains [link](https://plugins.jetbrains.com/plugin/10485-kubernetes)
+
+> Turn on whitespace rendering. You'll thank yourself in module 2.
 
 ## Docs
 
-- [Getting Started | Helm](https://helm.sh/docs/chart_template_guide/getting_started/)
-- [Chart Development Tips and Tricks](https://helm.sh/docs/howto/charts_tips_and_tricks/)
-- [Debugging Templates](https://helm.sh/docs/chart_template_guide/debugging/)
+Keep these open while you work:
 
-## Useful commands
+- Using Helm: <https://helm.sh/docs/intro/using_helm/>
+- **Chart template guide** — the one you'll actually use:
+  <https://helm.sh/docs/chart_template_guide/>
+- Debugging templates: <https://helm.sh/docs/chart_template_guide/debugging/>
+- Function list: <https://helm.sh/docs/chart_template_guide/function_list/>
+- Best practices: <https://helm.sh/docs/chart_best_practices/>
+- An LLM makes a strong Helm tutor — but redact hostnames and credentials before pasting anything
+  real. See `GOVERNANCE.md`.
 
-- Create chart skeleton: `helm create <chart-name>`
-- Install chart: `helm install <release-name> ./gateway-chart -f values-dev.yml (-n <namespace>)`
-- Upgrade chart: `helm upgrade <release-name> ./gateway-chart (-n <namespace>)`
-    - useful flags: `--reset-values --atomic`
-- Release history: `helm history <release-name> (-n <namespace>)`
-- Release rollback: `helm rollback <release-name> <revision> (-n <namespace>)`
+## Modules
 
-## Tasks
+Work through them in order — each builds on the last.
 
-### Task 1: Install and experiment with `simplest-chart`
+### [1 — The simplest possible chart](./1-simplest-chart/README.md)
+One Deployment, one ConfigMap, three values, no templating. Teaches the **release model**: what
+`helm install` does, `helm template` vs `helm get manifest`, revisions and rollback, where a release
+actually lives, and why two releases of a chart with hardcoded names collide.
 
-Demos the absolute basics of a Helm chart.
-`simple-chart` only has a single kubernetes Deployment, a ConfigMap and 2 template values.
+### [2 — The gateway chart](./2-gateway-chart/README.md)
+The main exercise. Nine hardcoded values across three files that should have come from
+`values.yaml` — find them and template them. Then run the same chart as dev and as prod, break it
+with `values-broken.yml`, watch `--rollback-on-failure` undo it, and package and publish the result.
 
-1. Install: `helm install simple ./simplest-chart`
-2. Test the deployment: `kubectl port-forward deploy/simplest-nginx 8888:80`
-3. Enable HTML override: `helm upgrade simple ./simplest-chart --set overrideHtml=true`
-4. What happened to the deployment's website? Try changing the HTML in the ConfigMap
-6. Change image: `helm upgrade simple ./simplest-chart --set imageTag=stable`
-7. Uninstall: `helm uninstall simple`
+### [3 — Your own system](./3-your-own-system/README.md) (open lab)
+The last 50 minutes, and the homework. Pick a system you're responsible for and start moving it —
+or one honest slice of it — toward Kubernetes. Fill in the [canvas](./3-your-own-system/CANVAS.md),
+get a chart skeleton up, and write down [what stopped you](./3-your-own-system/BLOCKERS.md).
 
-In the above commands `simple` is the release-name. It can be installed several times under different names & namespaces.
+### [edu — The greetings chart](./edu-greetings-chart/README.md)
+Not an exercise — the finished article. Workshop #2 module 5's Spring Boot + Postgres system as one
+chart, with a worked example of every pattern you'll need: a Postgres **subchart**, a migration
+**hook Job**, `checksum/config`, `values.schema.json`, `helm test`, and an `existingSecret` escape
+hatch so no credential is ever templated. **Copy from this during module 3.**
 
-Try installing in a different namespace:
-1. Create namespace: `kubectl create namespace demo`
-2. Install into namespace: `helm install simple ./simplest-chart --namespace demo`, what happens?
+## How the exercises work
 
-### Task 2: Implement TODOs in `gateway-chart`
+Same shape as the previous two workshops: feel the problem, then fix it.
 
-1. Install gateway-chart.
-2. Test that the basics are working according to NOTES.txt output.
-3. Implement the TODOs in templated manifests.
+1. **Module 1 shows you the release model with a chart that has almost no templating** — so the
+   collision you hit at the end is unmistakable.
+2. **Module 2 makes you do the templating** that fixes it, on a chart with real `TODO`s.
+3. **Module 3 is your own system**, with module 2's techniques and `edu-greetings-chart` as the
+   reference.
 
-Success criteria:
-- Value `api.enabled` toggles /api route to the backend container.
-- Value `service.port` controls the exposed port of the nginx proxy.
-- Value `backend.port` controls which port the backend exposes and nginx proxies to (if enabled).
-- Value `backend.text` changes the backend /api response.
-- Value `replicaCount` affects number of pods.
+The whole authoring loop is offline: `helm template` and `helm lint` need no cluster. Use them
+constantly.
 
-#### “Definition of done” checks
+### Solutions
 
-- `helm lint ./gateway-chart` passes.
-- `helm template ./gateway-chart` renders valid YAML.
+If you're stuck or want to compare, completed charts are on the
+[`solutions`](https://github.com/notalib/workshop-helm-chart/tree/solutions) branch:
 
-After install:
-- `/` returns gateway text
-- `/api` returns backend text
+```bash
+git checkout -t origin/solutions
+```
 
-### Task 3: Break stuff!
+## Essential helm
 
-Break your app, then fix it again:
-1. Upgrade the chart using `-f values-broken.yml`
-2. Try to deploy using `--atomic --timeout 10s`, what happens?
-3. Check the `values-broken.yml` comments
-4. Answer and solve the issues one by one.
+```bash
+# Install & upgrade
+helm install <release> <chart> [-n <ns>] [--create-namespace]
+helm upgrade <release> <chart> -f values-prod.yaml --set key=value
+helm upgrade --install <release> <chart>          # idempotent; what CI runs
+helm uninstall <release>
 
-### Task 4: Install 2 versions of gateway-chart at the same time!
+# Render WITHOUT a cluster — your main feedback loop
+helm template <chart> [-f values.yaml] [--set k=v] [--debug]
+helm lint <chart>
+helm install x <chart> --dry-run=client --debug
 
-1. Install 2 versions of gateway-chart in each their namespace use `--namespace x` when installing).
-2. Do they conflict? How to fix this?
+# Inspect a release
+helm list [-A]                    # -A = all namespaces
+helm get values <release> [--all] # --all merges in chart defaults
+helm get manifest <release>       # the YAML the cluster actually received
+helm get notes <release>
+helm get hooks <release>          # hooks don't appear in `get manifest`
 
-### Task 5: Installing from repository
+# Revisions
+helm history <release>
+helm rollback <release> [revision]              # omit revision = previous
+helm upgrade ... --rollback-on-failure --timeout 60s   # was --atomic in Helm 3
 
-- Charts can be installed from a repository
-- Add a repository: `helm repo add <name> <url>`
-- Search for available apps `helm search repo <repo>`
-- Check available versions of specific chart `helm search repo <repo>/<chart> --versions`
-- Install a given app: `helm install <repo>/<chart> --version "1.2.3."`
+# Meeting a chart you didn't write
+helm show values <chart>          # every knob it exposes
+helm show readme <chart>
 
-Suggested repos you can add:
-- https://helm.github.io/examples (hello-world app)
-- https://helm.elastic.co (elasticsearch)
-- https://charts.gitlab.io/ (gitlab)
-- https://github.com/cdwv/awesome-helm?tab=readme-ov-file#repositories--hubs
+# Dependencies, packaging, distribution
+helm dependency update <chart>
+helm package <chart>
+helm registry login <host> && helm push <chart>.tgz oci://<host>/<project>
+helm repo add <name> <url> && helm search repo <name> --versions
+helm test <release>
+```
+
+## How to get unstuck
+
+Before reaching for the solutions branch, these resolve nearly everything:
+
+- **`helm template ./ --debug`** — renders even when it's broken, and shows the error in context.
+  Your first stop for any template problem, and no cluster needed.
+- **`helm get values <release>`** — "but I set that value!" No, you didn't. This proves it. Usually
+  a list that got replaced wholesale, or a `--set` you didn't repeat.
+- **`helm get manifest <release>`** — what the cluster actually received. Ends all arguments about
+  what Helm "did".
+- **`kubectl describe` + `kubectl logs`** — once a manifest reaches the cluster, it's just
+  Kubernetes again, and workshop #2's tools apply unchanged. A Pod at `0/1 Running` is a failing
+  probe, not a Helm problem.
+- **`nil pointer evaluating interface {}`** — you referenced a value that isn't in `values.yaml`.
+  Add it, or `{{ .Values.thing | default "x" }}`.
+- **`helm <command> --help`** — especially for flags. Helm 4 renamed some.
+
+## Best practices
+
+They live in one place so they can't drift: **[BEST-PRACTICES.md](./BEST-PRACTICES.md)**. It opens
+with a 60-second table and closes with a pre-flight checklist you can run against a real PR.
+
+The three worth carrying in your head, because they're the expensive ones:
+
+- **Never put a changing value in a selector**
+  ([§6](./BEST-PRACTICES.md#6-naming-and-labels)) — Deployment selectors are immutable, so a version
+  label in there makes your chart permanently un-upgradeable. This is the only mistake on the list
+  that **cannot be fixed forward**.
+- **Credentials never go in a values file**
+  ([§5](./BEST-PRACTICES.md#5-secrets)) — take a Secret *name*, not a password. Values files get
+  committed, diffed, pasted into tickets and fed to LLMs.
+- **`values.yaml` is an API** ([§2](./BEST-PRACTICES.md#2-valuesyaml-is-your-api)) — every key is a
+  promise, and renaming one is a breaking change for everyone who installs your chart.
+
+## Bonus
+
+1. **Install something real.** `helm repo add` a public repo and install it — read its
+   `values.yaml` first. Reading other people's charts is how you learn to write them.
+   Start at <https://github.com/cdwv/awesome-helm#repositories--hubs>.
+2. **Chart your own workshop #1 image.** You built and published images in #1; write the smallest
+   chart that deploys one, with an Ingress.
+3. **Turn `edu-greetings-chart`'s Postgres into a StatefulSet** with a `volumeClaimTemplate`. Why is
+   that more correct for a database?
+4. **Add a third environment.** Write a `values-staging.yaml`. How little did you have to write?
+   That number is the point of this whole workshop.
+5. **Put `helm lint` and `helm template | kubeconform` in a GitHub Action** for your own chart.

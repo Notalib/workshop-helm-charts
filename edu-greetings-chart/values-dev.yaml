@@ -1,0 +1,18 @@
+# Development environment.
+#
+# A values file only contains the DIFFERENCE from the chart's defaults. Anything
+# not mentioned here keeps whatever values.yaml says — so this file stays short
+# and readable, and a chart default improvement reaches every environment.
+#
+#   helm upgrade --install greetings ./edu-greetings-chart -f values-dev.yaml
+
+replicaCount: 1
+
+ingress:
+  host: greetings-dev.localhost
+  tls: false
+
+postgres:
+  persistence:
+    # Small and disposable — a dev database is meant to be thrown away.
+    size: 1Gi
