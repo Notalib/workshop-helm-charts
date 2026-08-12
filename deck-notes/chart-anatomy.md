@@ -52,3 +52,7 @@ What's in the box. The single most useful slide for people who've never opened a
 > "The box analogy: workshop #2 gave you loose bricks — a pile of manifests you applied in the
 > right order by hand. This is the boxed set: same bricks, plus a parts list and an instruction
 > booklet, and you can hand it to someone else."
+
+---
+
+**Depth for prep / for anyone who asks:** [BEST-PRACTICES.md §3 (versioning)](../BEST-PRACTICES.md#3-versioning)

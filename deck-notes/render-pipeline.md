@@ -66,3 +66,7 @@ the workshop has failed.
 No — **Helm renders and submits; Kubernetes keeps it running.** A useful test question for the
 room: *if I delete a Pod from a Helm release, what recreates it?* (The Deployment's ReplicaSet
 controller. Helm isn't involved and isn't even aware.)
+
+---
+
+**Depth for prep / for anyone who asks:** [BEST-PRACTICES.md §9 (operating a chart)](../BEST-PRACTICES.md#9-operating-a-chart)

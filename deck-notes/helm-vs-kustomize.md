@@ -65,3 +65,7 @@ in the room.
   resharding), not just installation. Complementary: many operators are installed *by* a Helm chart.
 - **Plain YAML in git** — genuinely fine for a handful of manifests. The moment you copy a
   directory to make "the prod one", you've outgrown it.
+
+---
+
+**Depth for prep / for anyone who asks:** [BEST-PRACTICES.md §10 (anti-patterns)](../BEST-PRACTICES.md#10-anti-patterns)

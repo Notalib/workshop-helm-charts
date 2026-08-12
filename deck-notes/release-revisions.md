@@ -80,3 +80,7 @@ The payoff slide. This is what `kubectl apply` genuinely cannot give you.
 
 > "Merkur is on revision 266+. Every one of those is a state you could return to. That's the
 > difference between a deployment and a pile of YAML someone applied on a Tuesday."
+
+---
+
+**Depth for prep / for anyone who asks:** [BEST-PRACTICES.md §9 (operating a chart)](../BEST-PRACTICES.md#9-operating-a-chart)
