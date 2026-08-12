@@ -43,14 +43,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-The database hostname — the one value that has to agree in three places.
-
-In workshop #2 module 5 this was a manual contract between the ConfigMap's
-POSTGRES_HOST, the name of the database Service, and the env var on the
-backend. Getting one of the three wrong meant the backend couldn't connect.
-
-Here it's computed once, and both the ConfigMap and the subchart's Service name
-derive from the same value. One source of truth instead of three.
+The database hostname. In module 5 this was a manual three-way contract between
+the ConfigMap, the Service name and the backend's env var. Computed once here,
+so there is one source of truth instead of three.
 */}}
 {{- define "greetings.databaseHost" -}}
 {{- if .Values.database.hostOverride -}}
@@ -61,15 +56,9 @@ derive from the same value. One source of truth instead of three.
 {{- end }}
 
 {{/*
-Which Secret holds the DB password, and under which key.
-
-The default name is derived from .Release.Name — NOT from greetings.fullname —
-because the Postgres subchart has to reach the same answer independently, and
-.Release.Name is the one thing parent and subchart always share. The subchart
-has a matching helper; the two conventions must stay in step.
-
-(The alternative is passing a computed name down, which values files cannot do —
-they're plain YAML, not templates. This convention is the usual workaround.)
+Which Secret holds the DB password. Derived from .Release.Name, not from
+fullname, because the postgres subchart must reach the same answer on its own
+and .Release.Name is all they share. Its helper must stay in step with this one.
 */}}
 {{- define "greetings.secretName" -}}
 {{- .Values.database.existingSecret | default (printf "%s-db-credentials" .Release.Name) -}}

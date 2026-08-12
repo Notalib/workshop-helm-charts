@@ -1,16 +1,9 @@
 {{- if .Values.persistence.enabled }}
 {{/*
-The PVC from workshop #2 module 4, now templated.
-
-Note what is NOT here: a `helm.sh/resource-policy: keep` annotation. Without it,
-`helm uninstall` deletes this claim and your data goes with it. Add it and the
-PVC survives uninstall — which is usually what you want for a database, and
-always surprising the first time either way.
-
-  annotations:
-    "helm.sh/resource-policy": keep
-
-Left off deliberately so the workshop cleans up after itself.
+Module 4's PVC, templated. Deliberately WITHOUT
+`annotations: {"helm.sh/resource-policy": keep}` — so `helm uninstall` deletes
+the claim and the data with it, and the workshop cleans up after itself. A real
+database wants that annotation. See BONUS 2.
 */}}
 apiVersion: v1
 kind: PersistentVolumeClaim
