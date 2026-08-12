@@ -1,10 +1,7 @@
 {{/*
-Workshop #2 module 5's postgres.yaml, templated.
-
-Still a Deployment, not a StatefulSet — see the note in Chart.yaml. Replicas is
-deliberately NOT a value: this chart cannot correctly run two Postgres Pods
-against one ReadWriteOnce volume, so exposing a knob that only breaks things
-would be a lie. Not every field should be configurable.
+Module 5's postgres.yaml, templated. Replicas is deliberately NOT a value: two
+Postgres Pods can't share one ReadWriteOnce volume, and a knob that only breaks
+things is a lie. Not every field should be configurable.
 */}}
 apiVersion: apps/v1
 kind: Deployment

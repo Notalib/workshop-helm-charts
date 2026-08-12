@@ -1,36 +1,16 @@
 {{/*
-Schema migration as a Helm HOOK.
+Schema migration as a Helm HOOK — module 5's BONUS 4 initContainer, promoted.
+An initContainer re-runs on every Pod start in every replica; a hook runs once
+per release operation, which is what a migration wants.
 
-In workshop #2 module 5 (BONUS 4) this was an initContainer on the backend Pod.
-That works, but it runs again on every Pod start, in every replica, forever —
-three backend replicas means three containers racing to create the same table.
-A hook Job runs ONCE per release operation, which is what a migration actually
-wants.
+  post-install   NOT pre-install: on pre-install the database doesn't exist yet,
+                 so this Job waits for it until --timeout kills the install.
+  pre-upgrade    migrate BEFORE the new code rolls out. If it fails, the upgrade
+                 is abandoned and the running release is untouched.
+  delete policy  before-hook-creation only. Adding `hook-succeeded` deletes the
+                 Job on success, and with it the log of what changed.
 
-── Why post-install and not pre-install? ────────────────────────────────────
-Hooks run to completion BEFORE the manifests of that phase are applied. On a
-`pre-install` hook the Postgres Deployment does not exist yet, so this Job's
-pg_isready loop would wait for a database that Helm hasn't created — until
---timeout kills the whole install. A classic first-chart trap.
-
-  post-install → runs after Postgres and the backend exist. First-run schema.
-  pre-upgrade  → runs before the NEW backend rolls out, on an existing database.
-                 This is the ordering you want: migrate, then deploy the code
-                 that depends on the migration.
-
-── Delete policy ───────────────────────────────────────────────────────────
-A Job's spec is immutable, so re-running a hook with the same name fails unless
-the old Job is cleared first. `before-hook-creation` does exactly that: delete
-the previous one just before creating the new one.
-
-Note what is deliberately NOT here: `hook-succeeded`. Adding it deletes the Job
-the moment it succeeds, which keeps the namespace tidy but destroys the
-evidence — `kubectl logs job/...` then fails with NotFound, and you have no
-record that the migration ran or what it did.
-
-For a migration that trade is wrong in both a workshop and in production: the
-log of a schema change is worth more than a tidy namespace. Keeping the Job also
-means `kubectl get jobs` answers "did the migration run?" at a glance.
+Why each of those, at length: ../README.md
 */}}
 {{- if .Values.migration.enabled }}
 apiVersion: batch/v1

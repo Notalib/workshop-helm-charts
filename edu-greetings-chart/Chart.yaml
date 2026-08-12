@@ -1,15 +1,9 @@
 apiVersion: v2
 name: greetings
-description: |
-  The Spring Boot + Postgres "greetings" app from workshop #1, wired by hand in
-  workshop #2 module 5, now packaged as a single installable chart.
+description: The Spring Boot + Postgres app from workshop #1, hand-wired in workshop #2 module 5, now one chart.
 type: application
 
-# TWO versions, and they move independently:
-#   version    — this chart. Bump it for ANY change to the templates or values.
-#   appVersion — the application inside. Tracks the container image tag.
-# Fixing a typo in NOTES.txt bumps `version` only. Shipping a new backend build
-# bumps `appVersion` (and `version`, because the chart changed too).
+# version = this chart. appVersion = the app inside it. See BEST-PRACTICES.md §3.
 version: 1.0.0
 appVersion: "1.2"
 
@@ -19,12 +13,8 @@ keywords:
 maintainers:
   - name: Daniel Freiling
 
-# The database ships WITH this chart, as a subchart in ./charts/postgres.
-#
-# `condition` lets whoever installs it swap our toy Postgres out for a real
-# managed database: `--set postgres.enabled=false` and point
-# `database.hostOverride` at an RDS/Azure endpoint. That single line is why
-# subcharts beat copy-pasting manifests.
+# `condition` makes the bundled database optional: --set postgres.enabled=false
+# and point database.hostOverride at a managed Postgres instead.
 dependencies:
   - name: postgres
     version: "1.0.0"
