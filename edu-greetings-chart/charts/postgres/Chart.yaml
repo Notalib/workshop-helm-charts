@@ -1,0 +1,12 @@
+apiVersion: v2
+name: postgres
+description: |
+  A deliberately minimal Postgres for the workshop — a Deployment, a Service and
+  a PVC, exactly as hand-written in workshop #2 module 5.
+
+  NOT production-grade. A real database wants a StatefulSet (stable identity and
+  per-replica storage), backups, connection pooling and a real StorageClass.
+  See the BONUS in the parent chart's README.
+type: application
+version: 1.0.0
+appVersion: "18.3"

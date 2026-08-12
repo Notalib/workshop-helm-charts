@@ -1,0 +1,87 @@
+{{/*
+Schema migration as a Helm HOOK.
+
+In workshop #2 module 5 (BONUS 4) this was an initContainer on the backend Pod.
+That works, but it runs again on every Pod start, in every replica, forever —
+three backend replicas means three containers racing to create the same table.
+A hook Job runs ONCE per release operation, which is what a migration actually
+wants.
+
+── Why post-install and not pre-install? ────────────────────────────────────
+Hooks run to completion BEFORE the manifests of that phase are applied. On a
+`pre-install` hook the Postgres Deployment does not exist yet, so this Job's
+pg_isready loop would wait for a database that Helm hasn't created — until
+--timeout kills the whole install. A classic first-chart trap.
+
+  post-install → runs after Postgres and the backend exist. First-run schema.
+  pre-upgrade  → runs before the NEW backend rolls out, on an existing database.
+                 This is the ordering you want: migrate, then deploy the code
+                 that depends on the migration.
+
+── Delete policy ───────────────────────────────────────────────────────────
+Job names are immutable, so re-running a hook with the same name fails unless
+the old Job is cleared. `before-hook-creation` does that; `hook-succeeded`
+keeps failed Jobs around so you can read their logs. Deliberately not
+`hook-failed` — a migration that failed is exactly the thing you need to debug.
+*/}}
+{{- if .Values.migration.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "greetings.fullname" . }}-migrate
+  labels:
+    {{- include "greetings.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      name: {{ include "greetings.fullname" . }}-migrate
+      labels:
+        {{- include "greetings.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+          env:
+            - name: POSTGRES_HOST
+              value: {{ include "greetings.databaseHost" . | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.global.database.name | quote }}
+            # PGPASSWORD rather than a password inside the connection URI —
+            # a URI would show up in `ps` output and in psql's history.
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "greetings.secretName" . }}
+                  key: {{ include "greetings.secretKey" . }}
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              echo "waiting for postgres at $POSTGRES_HOST..."
+              until pg_isready -h "$POSTGRES_HOST" -p 5432 -U postgres; do
+                echo "  not ready yet, retrying"; sleep 2
+              done
+              echo "applying schema"
+              # Both statements are idempotent, which is what makes it safe to
+              # re-run on every upgrade: CREATE TABLE IF NOT EXISTS and
+              # ON CONFLICT DO NOTHING.
+              psql -h "$POSTGRES_HOST" -U postgres -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 <<'SQL'
+                CREATE TABLE IF NOT EXISTS GREETINGS (
+                    id UUID PRIMARY KEY,
+                    name varchar(50) NOT NULL UNIQUE
+                );
+                INSERT INTO GREETINGS(id, name)
+                VALUES (gen_random_uuid(), 'Docker container'),
+                       (gen_random_uuid(), 'An awesome workshop'),
+                       (gen_random_uuid(), 'The Future')
+                ON CONFLICT (name) DO NOTHING;
+              SQL
+              echo "migration complete"
+{{- end }}

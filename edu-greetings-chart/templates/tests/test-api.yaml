@@ -1,0 +1,39 @@
+{{/*
+A release that can verify itself: `helm test <release>`.
+
+`helm.sh/hook: test` means this Pod is NOT created on install — only when
+someone runs `helm test`. Chart tests are the smoke test that answers "did the
+deploy actually work?" without a human clicking around, which is what makes
+automated promotion between environments possible.
+*/}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "greetings.fullname" . }}-test-api
+  labels:
+    {{- include "greetings.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  restartPolicy: Never
+  containers:
+    - name: test
+      image: curlimages/curl:8.11.1
+      command:
+        - sh
+        - -c
+        - |
+          set -e
+          BASE="http://{{ include "greetings.fullname" . }}:{{ .Values.service.port }}"
+
+          echo "1. readiness endpoint"
+          curl -fsS "$BASE/readyz" > /dev/null
+
+          echo "2. greetings list returns the seeded rows"
+          # -f makes curl exit non-zero on HTTP errors, which fails the test Pod,
+          # which fails `helm test`. No assertion library needed.
+          body=$(curl -fsS "$BASE/greetings")
+          echo "$body" | grep -q "An awesome workshop"
+
+          echo "PASS"

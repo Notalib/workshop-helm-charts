@@ -1,0 +1,77 @@
+{{/*
+Workshop #2 module 5's postgres.yaml, templated.
+
+Still a Deployment, not a StatefulSet — see the note in Chart.yaml. Replicas is
+deliberately NOT a value: this chart cannot correctly run two Postgres Pods
+against one ReadWriteOnce volume, so exposing a knob that only breaks things
+would be a lie. Not every field should be configurable.
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "postgres.fullname" . }}
+  labels:
+    {{- include "postgres.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    # Recreate, not RollingUpdate: the default rolling strategy would start a
+    # second Pod before killing the first, and both would try to mount the same
+    # ReadWriteOnce PVC. The new Pod would hang forever in ContainerCreating.
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "postgres.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "postgres.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: postgres
+              containerPort: {{ .Values.service.port }}
+          env:
+            # Read from `global`, so the parent chart and this subchart cannot
+            # disagree about which database to create.
+            - name: POSTGRES_DB
+              value: {{ .Values.global.database.name | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "postgres.secretName" . }}
+                  key: {{ include "postgres.secretKey" . }}
+            # postgres:18+ puts data in a versioned subdirectory, so the volume
+            # is mounted at the parent and PGDATA points inside it. Mounting
+            # PGDATA directly fails on the lost+found dir some volumes create.
+            - name: PGDATA
+              value: /var/lib/postgresql/data
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql
+          readinessProbe:
+            exec:
+              # pg_isready, not an HTTP probe — Postgres speaks its own protocol.
+              command: ["pg_isready", "-U", "postgres", "-d", "{{ .Values.global.database.name }}"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: data
+        {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "postgres.fullname" . }}-data
+        {{- else }}
+          # No PVC: data dies with the Pod. Fine for CI, never for anything you
+          # care about — this is the "Pods are disposable" lesson from #2.
+          emptyDir: {}
+        {{- end }}

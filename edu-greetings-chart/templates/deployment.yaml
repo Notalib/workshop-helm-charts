@@ -1,0 +1,64 @@
+{{/*
+The app tier. This is workshop #2 module 5's backend.yaml with the varying
+parts pulled out into values — put them side by side and the diff IS the
+lesson on templating.
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "greetings.fullname" . }}
+  labels:
+    {{- include "greetings.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "greetings.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        # Roll the Pods when the CONFIG changes, but not otherwise.
+        #
+        # Module 1's chart annotated with .Release.Revision, which restarts on
+        # every single upgrade — blunt. This hashes the rendered ConfigMap
+        # instead, so bumping an unrelated value doesn't churn your Pods, and
+        # changing POSTGRES_HOST does.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "greetings.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: backend
+          image: {{ include "greetings.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+          env:
+            # All three of these were hand-wired in module 5. envFrom pulls the
+            # whole ConfigMap in one line instead of three `valueFrom` blocks.
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "greetings.secretName" . }}
+                  key: {{ include "greetings.secretKey" . }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "greetings.fullname" . }}-config
+          # Probes carried over unchanged from module 5. readiness gates traffic
+          # (checks the DB), liveness only checks the process — deliberately
+          # NOT the DB, or one database blip restarts every backend at once.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

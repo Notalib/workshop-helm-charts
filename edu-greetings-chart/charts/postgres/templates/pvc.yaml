@@ -1,0 +1,30 @@
+{{- if .Values.persistence.enabled }}
+{{/*
+The PVC from workshop #2 module 4, now templated.
+
+Note what is NOT here: a `helm.sh/resource-policy: keep` annotation. Without it,
+`helm uninstall` deletes this claim and your data goes with it. Add it and the
+PVC survives uninstall — which is usually what you want for a database, and
+always surprising the first time either way.
+
+  annotations:
+    "helm.sh/resource-policy": keep
+
+Left off deliberately so the workshop cleans up after itself.
+*/}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "postgres.fullname" . }}-data
+  labels:
+    {{- include "postgres.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- with .Values.persistence.storageClass }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size | quote }}
+{{- end }}

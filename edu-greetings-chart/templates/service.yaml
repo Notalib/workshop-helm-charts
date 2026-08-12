@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "greetings.fullname" . }}
+  labels:
+    {{- include "greetings.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "greetings.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      # Named port — follows the container automatically, so there is one fewer
+      # number to keep in sync.
+      targetPort: http
+      protocol: TCP

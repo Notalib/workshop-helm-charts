@@ -1,0 +1,35 @@
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "greetings.fullname" . }}
+  labels:
+    {{- include "greetings.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  {{/* `with` sets the scope AND skips the block entirely when empty, so no
+       stray `annotations:` key with nothing under it. */}}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "greetings.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      # This Secret has to exist. The chart won't create it and the install will
+      # succeed without it — cert-manager's job in a real cluster.
+      secretName: {{ include "greetings.fullname" . }}-tls
+  {{- end }}
+{{- end -}}

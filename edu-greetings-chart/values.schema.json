@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "greetings chart values",
+  "description": "Validated at install/upgrade time, before anything reaches the cluster. A typo here fails in one second with a clear message instead of producing a Deployment that CrashLoops for ten minutes. Skip with --skip-schema-validation if you must.",
+  "type": "object",
+  "required": ["replicaCount", "image", "service", "database", "global"],
+  "properties": {
+    "global": {
+      "type": "object",
+      "required": ["database"],
+      "properties": {
+        "database": {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+              "description": "Postgres identifier rules — catches 'my-db', which Postgres would reject."
+            }
+          }
+        }
+      }
+    },
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "The backend is stateless, so this can scale freely. Capped at 10 to stop a fat-fingered --set replicaCount=1000 from taking out a laptop cluster."
+    },
+    "image": {
+      "type": "object",
+      "required": ["repository"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "tag": {
+          "type": "string",
+          "description": "Empty means fall back to .Chart.AppVersion."
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": ["Always", "IfNotPresent", "Never"],
+          "description": "An enum, so 'ifNotPresent' fails here rather than being silently ignored by Kubernetes."
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "required": ["port"],
+      "properties": {
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "className": { "type": "string" },
+        "host": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A hostname, not a URL — 'http://x.localhost' is a common and confusing mistake."
+        },
+        "tls": { "type": "boolean" },
+        "annotations": { "type": "object" }
+      }
+    },
+    "database": {
+      "type": "object",
+      "properties": {
+        "hostOverride": { "type": "string" },
+        "password": { "type": "string" },
+        "existingSecret": { "type": "string" },
+        "existingSecretKey": { "type": "string" }
+      }
+    },
+    "migration": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "resources": { "type": "object" },
+    "nameOverride": { "type": "string" },
+    "fullnameOverride": { "type": "string" },
+    "postgres": {
+      "type": "object",
+      "description": "Subchart values. Deliberately loose — the subchart owns its own contract, and over-specifying a dependency's shape here means editing two files every time it changes.",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "fullnameOverride": { "type": "string" },
+        "persistence": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "size": {
+              "type": "string",
+              "pattern": "^[0-9]+(Mi|Gi|Ti)$",
+              "description": "A Kubernetes quantity. Catches size: 1 (no unit) and size: 1GB (wrong unit)."
+            },
+            "storageClass": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

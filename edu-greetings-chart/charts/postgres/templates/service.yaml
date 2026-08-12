@@ -1,0 +1,20 @@
+{{/*
+THE contract. This Service's name is the DNS name the backend dials, and the
+parent chart computes the same name in greetings.databaseHost. In module 5 you
+had to keep three things in agreement by hand; here one value drives both.
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "postgres.fullname" . }}
+  labels:
+    {{- include "postgres.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "postgres.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: postgres
+      port: {{ .Values.service.port }}
+      targetPort: postgres
+      protocol: TCP
