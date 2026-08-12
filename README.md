@@ -19,8 +19,7 @@ That chart is [`edu-greetings-chart/`](./edu-greetings-chart/README.md).
 
 ## Repo layout
 
-- [**BEST-PRACTICES.md**](./BEST-PRACTICES.md) — the checklist for writing charts you'll still like
-  in a year. Read it once, then keep it open during module 3.
+- [**BEST-PRACTICES.md**](./BEST-PRACTICES.md) — the checklist for writing charts you should still refer to in a year.
 - [deck-outline.md](./deck-outline.md) — the theory, slide by slide. `Helm_workshop.pptx` is built
   from it.
 - [setup/](./setup/README.md) — **do this first.** Ten minutes, before the workshop starts.
