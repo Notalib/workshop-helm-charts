@@ -163,10 +163,10 @@ helm get values gw --all    # merged with chart defaults
 
 ---
 
-## TASK 5: Break it, then roll back 😈
+## TASK 5a: `values-broken.yml` — a test of your own templating 😈
 
-[`values-broken.yml`](./values-broken.yml) contains three sabotages, each with a question in a
-comment. Deploy it and find out:
+[`values-broken.yml`](./values-broken.yml) moves three values away from their defaults, each with a
+question in a comment. Deploy it:
 
 ```bash
 helm upgrade gw ./ -f values-broken.yml
@@ -174,15 +174,54 @@ kubectl get pods -l app.kubernetes.io/instance=gw
 curl -i -H "Host: gateway-broken.localhost" http://127.0.0.1/
 ```
 
-Answer the three comments in the file. Then do it the way a grown-up deployment does it — ask
-Helm to undo a failed upgrade by itself:
+**Here's the twist: whether this breaks depends entirely on how well you did TASK 3.**
+
+- **Pod stuck at `0/1 Running` and the curl 503s?** You left something hardcoded. `service.port` is
+  now 1234, so nginx listens on 1234 — but if the probes still say `port: 80` they fail, the Pod
+  never becomes Ready, the Service has no endpoints, and the Ingress has nowhere to route. Find it
+  with `kubectl describe pod -l app.kubernetes.io/instance=gw`.
+- **Everything still works?** Then you templated all nine consistently, and there was nothing to
+  break. That's the actual lesson: **the file isn't broken, incomplete templating is.** A value
+  referenced in five places and templated in four is the bug.
+
+Now answer the three questions in the comments — especially `api.publicPath: /api/v2`, which
+*changes* behaviour without breaking anything. Which URL serves the backend now?
 
 ```bash
-helm upgrade gw ./ -f values-broken.yml --rollback-on-failure --timeout 30s
+curl -i -H "Host: gateway-broken.localhost" http://127.0.0.1/api      # ?
+curl -i -H "Host: gateway-broken.localhost" http://127.0.0.1/api/v2   # ?
 ```
 
-**What happened?** Helm waited for the Pods to become healthy, they didn't, so it rolled the
-release back to the last good revision and reported failure. Nothing was left half-deployed.
+---
+
+## TASK 5b: A failure that always fails, and undoes itself
+
+For the rollback demo we need a break that no amount of good templating can save. An image tag that
+doesn't exist will do it:
+
+```bash
+helm upgrade gw ./ --set image.nginx=nginx:this-tag-does-not-exist \
+  --rollback-on-failure --timeout 60s
+```
+
+> **If that succeeds instead of failing**, you haven't templated the nginx image yet — the
+> Deployment is still pinned to a hardcoded `nginx:alpine`, so your `--set` changed nothing. Go back
+> to TASK 3. (A value that silently does nothing is the whole bug class this exercise is about.)
+
+While it waits, watch from another terminal:
+
+```bash
+kubectl get pods -l app.kubernetes.io/instance=gw -w
+# the NEW Pod goes ImagePullBackOff; the OLD Pods keep serving
+```
+
+```bash
+curl -i -H "Host: gateway-dev.localhost" http://127.0.0.1/   # still up, the whole time
+```
+
+**What happened?** Helm waited for the new Pods to become healthy, they never did, so it rolled the
+release back to the last good revision and exited non-zero. Nothing was left half-deployed, and the
+bad version never received traffic.
 
 ```bash
 helm history gw          # the failed revision AND the rollback are both recorded
@@ -192,11 +231,16 @@ helm get values gw       # you're back on the previous values
 > **Helm 4 renamed this flag.** It was `--atomic` in Helm 3, which is what every blog post and
 > Stack Overflow answer still says. `--atomic` still works but prints a deprecation warning —
 > use `--rollback-on-failure`. Setting it also switches `--wait` on for you, which is what makes
-> the failure detectable in the first place.
+> the failure detectable in the first place: without waiting, Helm submits the manifests, sees no
+> error, and cheerfully reports success while your Pod is in `ImagePullBackOff`.
 >
-> **One asymmetry worth knowing:** this only rolls *back*. If the very first `helm install`
-> fails there is no previous revision, so Helm **uninstalls** instead. "Roll back" needs
-> somewhere to roll back to.
+> **One asymmetry worth knowing:** this only rolls *back*. If the very first `helm install` fails
+> there is no previous revision, so Helm **uninstalls** instead. "Roll back" needs somewhere to
+> roll back to.
+>
+> **And what it does NOT undo: your database.** If a migration had run, rolling back the release
+> would not roll back the schema. That's the honest limit — see
+> [`edu-greetings-chart`](../edu-greetings-chart/README.md) BONUS 3.
 
 Now recover manually, the way you would at 3am:
 
