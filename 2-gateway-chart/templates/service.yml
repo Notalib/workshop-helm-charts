@@ -1,4 +1,4 @@
-﻿apiVersion: v1
+apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "gateway.fullname" . }}
@@ -11,11 +11,12 @@ spec:
     app.kubernetes.io/instance: {{ .Release.Name }}
   ports:
     - name: http
-      # TODO: hardcoded! This is the port the SERVICE exposes — and ingress.yml already
-      #       routes to `service.port`. If those two disagree, routing dies. Which value
-      #       belongs here?
-      port: 80
-      # targetPort refers to the container's *named* port ("http" in deployment.yml),
-      # so it follows the container automatically. Named ports save you a 4th hardcoding.
+      # SOLVED: was hardcoded to 80 while ingress.yml already routed to
+      # .Values.service.port. Those two disagreeing means the Ingress points at a
+      # port the Service doesn't expose, and routing dies silently.
+      port: {{ .Values.service.port }}
+      # targetPort refers to the container's *named* port ("http" in
+      # deployment.yml), so it follows the container automatically. Named ports
+      # save you a fourth hardcoding.
       targetPort: http
       protocol: TCP

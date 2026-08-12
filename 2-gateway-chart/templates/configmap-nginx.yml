@@ -1,4 +1,4 @@
-﻿apiVersion: v1
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ include "gateway.name" . }}-nginx
@@ -25,7 +25,28 @@ data:
         return 200 "Gateway is up for {{ .Release.Name }}\n";
       }
 
-      # TODO: Only include the next part if api.enabled is true
+{{- /*
+  SOLVED: the /api block below is now conditional. With api.enabled=false those
+  routes simply aren't in the rendered config, so /api falls through to the 404
+  dead-end above.
+
+  Two things worth noticing, both of which cost real time to learn:
+
+  1. THIS comment is a Go template comment, so it disappears at render. An nginx
+     `#` comment would have stayed in the ConfigMap — and, more importantly, Go
+     would still have parsed any template syntax inside it. Writing the example
+     "open-brace open-brace if" inside a `#` comment fails with
+     `missing value for if`, because the parser does not care that nginx thinks
+     it's a comment. The template engine sees the whole file as text, whatever
+     the host language is.
+     To emit literal braces on purpose, use: {{ "{{" }}
+
+  2. The dash in `{{`- if ... `}}` chomps the preceding whitespace and newline.
+     Without it you get a stray blank line here — harmless in an nginx config,
+     but the identical mistake inside a YAML manifest shifts the indentation and
+     the render fails.
+*/ -}}
+    {{- if .Values.api.enabled }}
       location = {{ .Values.api.publicPath }} {
         return 308 {{ .Values.api.publicPath }}/;
       }
@@ -44,7 +65,9 @@ data:
 
         rewrite ^{{ .Values.api.publicPath }}/?(.*)$ /$1 break;
 
-        # TODO: Port to the backend is hardcoded
-        proxy_pass http://127.0.0.1:5678/;
+        # SOLVED: was hardcoded to 5678. This is the third place backend.port is
+        # referenced (see deployment.yml for the other two).
+        proxy_pass http://127.0.0.1:{{ .Values.backend.port }}/;
       }
+    {{- end }}
     }

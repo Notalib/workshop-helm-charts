@@ -1,6 +1,35 @@
-﻿Your gateway demo is now installed!
+Your gateway is installed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}"
+(revision {{ .Release.Revision }}).
 
-Host: {{ .Values.ingress.host }}
-Try:
-  curl -i -H "Host: gateway.localhost" http://127.0.0.1/
-  curl -i -H "Host: gateway.localhost" http://127.0.0.1{{ .Values.api.publicPath }}
+Replicas: {{ .Values.replicaCount }}
+Gateway:  {{ .Values.image.nginx }} on port {{ .Values.service.port }}
+Backend:  {{ if .Values.api.enabled }}{{ .Values.image.echo }} on port {{ .Values.backend.port }}{{ else }}disabled (api.enabled=false){{ end }}
+
+{{- if .Values.ingress.enabled }}
+
+Try it — SOLVED: the host and the API path were hardcoded here, so NOTES.txt
+lied as soon as you changed either one. A chart whose own instructions are wrong
+is worse than a chart with no instructions.
+
+  curl -i -H "Host: {{ .Values.ingress.host }}" http{{ if .Values.ingress.tls }}s{{ end }}://127.0.0.1/
+{{- if .Values.api.enabled }}
+  curl -i -H "Host: {{ .Values.ingress.host }}" http{{ if .Values.ingress.tls }}s{{ end }}://127.0.0.1{{ .Values.api.publicPath }}
+{{- end }}
+{{- if .Values.ingress.tls }}
+
+  ⚠️  ingress.tls is on, so your ingress controller expects the Secret
+      "{{ include "gateway.fullname" . }}-tls" to exist. This chart does NOT
+      create it — that's cert-manager's job. Expect a certificate warning.
+{{- end }}
+{{- else }}
+
+Ingress is disabled, so port-forward instead:
+
+  kubectl port-forward -n {{ .Release.Namespace }} deploy/{{ include "gateway.fullname" . }} 8888:{{ .Values.service.port }}
+  curl -i http://127.0.0.1:8888/
+{{- end }}
+
+Inspect and operate:
+  helm get values {{ .Release.Name }} -n {{ .Release.Namespace }}
+  helm history {{ .Release.Name }} -n {{ .Release.Namespace }}
+  helm rollback {{ .Release.Name }} -n {{ .Release.Namespace }}
