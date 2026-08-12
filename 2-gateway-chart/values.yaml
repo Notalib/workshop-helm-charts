@@ -12,7 +12,8 @@ service:
 
 ingress:
   enabled: true
-  className: nginx
+  # Rancher Desktop / k3d ship Traefik. On kind + ingress-nginx use "nginx".
+  className: traefik
   host: gateway.localhost
   tls: false
   annotations: {}
