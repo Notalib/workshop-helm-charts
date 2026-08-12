@@ -122,6 +122,28 @@ helm get hooks g                                    # what Helm considers a hook
 kubectl logs job/g-greetings-migrate                # the migration's own output
 ```
 
+> **The Job is deliberately left behind after it succeeds.** The tidy-looking
+> `hook-delete-policy: hook-succeeded` would delete it, and then the `kubectl logs` command above
+> fails with `NotFound` — no record that the migration ran or what it changed. For a schema change
+> that trade is wrong: keep the evidence.
+
+**And here's what the ordering buys you.** A `pre-upgrade` hook runs *before* the new Pods roll
+out, so if the migration fails, the upgrade is abandoned and the running app is never touched:
+
+```bash
+# force the migration to fail — point it at a database that doesn't exist
+helm upgrade g ./ --set global.database.name=otherdb --wait --timeout 60s
+# Error: UPGRADE FAILED: pre-upgrade hooks failed: ... kind: Job, status: InProgress
+
+helm history g          # the new revision is `failed`
+kubectl get cm g-greetings-config -o jsonpath='{.data.POSTGRES_DB}'   # still "example"
+curl -H "Host: greetings.localhost" http://127.0.0.1/greetings        # still serving
+```
+
+The live release is bit-for-bit what it was. Compare that with a `post-upgrade` migration, where
+the new code is already serving traffic by the time the migration fails — now you have new code
+against an old schema, which is the genuinely bad outage.
+
 ### A rollout only when the config changed
 
 Module 1's chart annotated Pods with `.Release.Revision`, restarting on *every* upgrade.

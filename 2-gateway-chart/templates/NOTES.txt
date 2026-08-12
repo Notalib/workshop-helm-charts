@@ -11,9 +11,12 @@ Try it — SOLVED: the host and the API path were hardcoded here, so NOTES.txt
 lied as soon as you changed either one. A chart whose own instructions are wrong
 is worse than a chart with no instructions.
 
-  curl -i -H "Host: {{ .Values.ingress.host }}" http{{ if .Values.ingress.tls }}s{{ end }}://127.0.0.1/
+  curl -i  -H "Host: {{ .Values.ingress.host }}" http{{ if .Values.ingress.tls }}s{{ end }}://127.0.0.1/
 {{- if .Values.api.enabled }}
-  curl -i -H "Host: {{ .Values.ingress.host }}" http{{ if .Values.ingress.tls }}s{{ end }}://127.0.0.1{{ .Values.api.publicPath }}
+  curl -iL -H "Host: {{ .Values.ingress.host }}" http{{ if .Values.ingress.tls }}s{{ end }}://127.0.0.1{{ .Values.api.publicPath }}
+
+  (-L because {{ .Values.api.publicPath }} 308-redirects to {{ .Values.api.publicPath }}/ — without it curl
+   shows you the redirect instead of the backend's answer.)
 {{- end }}
 {{- if .Values.ingress.tls }}
 

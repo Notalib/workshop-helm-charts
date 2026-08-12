@@ -19,10 +19,18 @@ pg_isready loop would wait for a database that Helm hasn't created — until
                  that depends on the migration.
 
 ── Delete policy ───────────────────────────────────────────────────────────
-Job names are immutable, so re-running a hook with the same name fails unless
-the old Job is cleared. `before-hook-creation` does that; `hook-succeeded`
-keeps failed Jobs around so you can read their logs. Deliberately not
-`hook-failed` — a migration that failed is exactly the thing you need to debug.
+A Job's spec is immutable, so re-running a hook with the same name fails unless
+the old Job is cleared first. `before-hook-creation` does exactly that: delete
+the previous one just before creating the new one.
+
+Note what is deliberately NOT here: `hook-succeeded`. Adding it deletes the Job
+the moment it succeeds, which keeps the namespace tidy but destroys the
+evidence — `kubectl logs job/...` then fails with NotFound, and you have no
+record that the migration ran or what it did.
+
+For a migration that trade is wrong in both a workshop and in production: the
+log of a schema change is worth more than a tidy namespace. Keeping the Job also
+means `kubectl get jobs` answers "did the migration run?" at a glance.
 */}}
 {{- if .Values.migration.enabled }}
 apiVersion: batch/v1
@@ -34,7 +42,7 @@ metadata:
   annotations:
     "helm.sh/hook": post-install,pre-upgrade
     "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   backoffLimit: 3
   template:
