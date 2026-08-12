@@ -87,8 +87,14 @@ components, `compose.yml`, a 21-template chart at v1.11.12, CI bumping versions 
 for four environments including `values_kind.yaml` for a local kind cluster. Same chart, production
 through laptop.
 
-⚠️ Show the chart's **structure** and `values_kind.yaml`, not `ci/helm-chart/values.yaml` — it has
-two literal credentials in it until that's cleaned up.
+Small aside if you show `ci/helm-chart/values.yaml`: its `uploadcover.apiKey` and `redis.password`
+defaults are dev dummies, but they *look* like real credentials. `values_kind.yaml` in the same repo
+does it better with `"abc"` and `"pw"` — unmistakably fake.
+
+Worth a sentence to the room, because it's a free habit: **make placeholder credentials obviously
+fake** — `"dummy-dev-only"` rather than something that looks plausible. A realistic-looking dummy
+costs a reviewer a phone call to find out whether they're looking at a leak, and it means nobody can
+tell at a glance whether a real value crept in later.
 
 ---
 

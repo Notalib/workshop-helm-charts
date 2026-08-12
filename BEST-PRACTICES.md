@@ -207,6 +207,11 @@ helm template x ./edu-greetings-chart -f edu-greetings-chart/values-prod.yaml | 
 # 0
 ```
 
+**Make placeholder credentials obviously fake.** If a chart ships dev defaults, `"dummy-dev-only"`
+beats anything that looks plausible. A realistic-looking dummy is indistinguishable from a real leak,
+so every reviewer has to stop and ask — and once a real value does creep in, nobody notices, because
+the file always looked like that.
+
 Also: **base64 is encoding, not encryption.** And the `randAlphaNum` password trick regenerates on
 every upgrade unless you guard it with `lookup` — which itself returns empty under
 `helm template` (no cluster). Generating passwords in a chart is more fragile than it looks.
