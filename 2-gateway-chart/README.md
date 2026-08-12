@@ -325,6 +325,18 @@ helm install from-tgz ./gateway-0.1.0.tgz
 helm uninstall from-tgz
 ```
 
+Look at what's actually inside it:
+
+```bash
+tar -tzf gateway-0.1.0.tgz
+```
+
+**`values-dev.yml` and `values-prod.yml` are not in there** — [`.helmignore`](./.helmignore)
+excludes them, the same way `.dockerignore` trims a build context. That's deliberate and it's the
+important idea: **the chart is the artifact; environment configuration is not part of it.** Your
+values files live in whatever repo drives your deployments, and get passed in with `-f` at install
+time. A colleague who installs your published chart gets the chart, not your hostnames.
+
 ### Publish to the workshop registry
 
 Charts are **OCI artifacts** — they live in a container registry, right next to the images from
@@ -415,3 +427,17 @@ kubectl delete namespace gw-a gw-b
 5. **`helm diff`.** Install the plugin (`helm plugin install https://github.com/databus23/helm-diff`)
    then `helm diff upgrade gw ./ -f values-prod.yml`. See the change *before* you make it. This is
    the plugin most teams consider mandatory.
+6. **Add resource requests and limits.** This chart deliberately has none, which
+   [`BEST-PRACTICES.md`](../BEST-PRACTICES.md) lists as something you should almost always template
+   — a laptop and a production node want very different numbers. Add a `resources:` block to
+   `values.yaml` and render it with `{{- toYaml .Values.resources | nindent 12 }}`. Copy the pattern
+   from [`edu-greetings-chart`](../edu-greetings-chart/templates/deployment.yaml). Then work out why
+   `nindent 12` and not `nindent 10`.
+7. **Give the chart a `values.schema.json`.** Right now `--set service.port=notaport` renders happily
+   and fails only when Kubernetes rejects it. Add a schema that catches it in one second. Start from
+   [`edu-greetings-chart/values.schema.json`](../edu-greetings-chart/values.schema.json). Which of
+   this chart's nine values have a range or a format worth enforcing?
+8. **The backend container has no probe.** So `--wait` and `--rollback-on-failure` can't tell a
+   broken backend from a working one — only a broken *nginx*. Add a probe to the `backend` container
+   and prove it: break the backend's port on purpose and watch the upgrade fail where it previously
+   succeeded.

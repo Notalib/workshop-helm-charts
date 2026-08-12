@@ -45,8 +45,12 @@ database:
   # point at an external database (managed Postgres, another namespace,
   # whatever) — then also set postgres.enabled=false.
   hostOverride: ""
-  # ⚠️  WORKSHOP PLACEHOLDER ONLY. A real password does not belong in a values
-  #     file, because values files live in git and get pasted into tickets.
+  # ⚠️  WORKSHOP PLACEHOLDER ONLY, and a deliberate violation of the rule in
+  #     BEST-PRACTICES.md §5 so the chart installs with no setup. A real
+  #     password does not belong in a values file, because values files live in
+  #     git and get pasted into tickets.
+  #     values-prod.yaml shows the correct version: it names an existing Secret
+  #     and renders no Secret of its own.
   #     Production options, roughly in order of how much you'll enjoy them:
   #       - External Secrets Operator (pulls from Vault/Azure Key Vault/AWS SM)
   #       - Sealed Secrets or SOPS (encrypted values, safe to commit)
