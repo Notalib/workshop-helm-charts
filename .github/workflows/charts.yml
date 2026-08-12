@@ -1,0 +1,112 @@
+name: charts
+
+# BEST-PRACTICES.md says "helm lint in CI" and its pre-flight checklist assumes
+# it. This is that. It also guards the failure this repo actually had once: the
+# solutions branch drifting out of sync with the exercises, so that anyone who
+# got stuck and checked it out found a chart that didn't match their TODOs.
+
+on:
+  push:
+    branches: ["main", "solutions", "feat/**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint-and-render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: azure/setup-helm@v4
+        with:
+          # Match what Rancher Desktop ships, so CI and the room agree.
+          version: v4.0.5
+
+      - name: helm lint
+        run: |
+          for c in 1-simplest-chart 2-gateway-chart edu-greetings-chart; do
+            echo "::group::lint $c"
+            helm lint "./$c"
+            echo "::endgroup::"
+          done
+
+      - name: helm template with every values file
+        run: |
+          set -euo pipefail
+          render() {  # render() <chart> [extra args...]
+            echo "  rendering $*"
+            helm template ci "$@" > /dev/null
+          }
+          for c in 1-simplest-chart 2-gateway-chart edu-greetings-chart; do
+            render "./$c"
+          done
+          for v in 2-gateway-chart/values-*.yml; do
+            render ./2-gateway-chart -f "$v"
+          done
+          for v in edu-greetings-chart/values-*.yaml; do
+            render ./edu-greetings-chart -f "$v"
+          done
+
+      - name: rendered output must be valid YAML
+        run: |
+          set -euo pipefail
+          for c in 1-simplest-chart 2-gateway-chart edu-greetings-chart; do
+            helm template ci "./$c" | python3 -c "import sys,yaml; list(yaml.safe_load_all(sys.stdin))"
+          done
+
+      - name: rendered manifests must be valid Kubernetes objects
+        run: |
+          curl -sSL -o /tmp/kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz
+          tar -xzf /tmp/kubeconform.tar.gz -C /tmp kubeconform
+          for c in 1-simplest-chart 2-gateway-chart edu-greetings-chart; do
+            echo "::group::kubeconform $c"
+            helm template ci "./$c" | /tmp/kubeconform -strict -summary -
+            echo "::endgroup::"
+          done
+
+      - name: values.schema.json must actually reject bad input
+        run: |
+          # If the schema stops biting, the slide that shows it off becomes a lie.
+          ! helm template ci ./edu-greetings-chart --set replicaCount=1000 2>/dev/null
+          ! helm template ci ./edu-greetings-chart --set image.pullPolicy=ifNotPresent 2>/dev/null
+          ! helm template ci ./edu-greetings-chart --set global.database.name=my-db 2>/dev/null
+          echo "schema rejected all three, as documented"
+
+      - name: production values must never render a Secret
+        run: |
+          count=$(helm template ci ./edu-greetings-chart \
+            -f edu-greetings-chart/values-prod.yaml | grep -c "kind: Secret" || true)
+          if [ "$count" != "0" ]; then
+            echo "values-prod.yaml rendered $count Secret(s) — it must use existingSecret"
+            exit 1
+          fi
+          echo "0 Secrets, as documented"
+
+  solutions-in-sync:
+    # The drift guard. On the solutions branch every TODO must be solved, and it
+    # must not have fallen behind main.
+    if: github.ref == 'refs/heads/solutions'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: no unsolved TODOs in chart templates
+        run: |
+          if grep -rn "TODO" ./*/templates/ ./*/charts/*/templates/ 2>/dev/null; then
+            echo "::error::solutions branch still contains TODOs in chart templates"
+            exit 1
+          fi
+          echo "no TODOs remain"
+
+      - name: solutions must not be behind main
+        run: |
+          git fetch origin main
+          behind=$(git rev-list --count HEAD..origin/main)
+          if [ "$behind" -ne 0 ]; then
+            echo "::error::solutions is $behind commit(s) behind main — merge main into it"
+            exit 1
+          fi
+          echo "up to date with main"
