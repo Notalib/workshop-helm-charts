@@ -588,7 +588,12 @@ blind. First system: do it. Fifth: copy your last chart.
 
 Optional 30-second pilot mention: **BookCoverService has been all the way through** — four
 components, a 21-template chart at v1.11.12, four environments including `values_kind.yaml` for a
-local kind cluster. ⚠️ Show the chart *structure*, not `ci/helm-chart/values.yaml`.
+local kind cluster.
+
+If you put its `values.yaml` on screen, one free habit to point out: its dev dummy credentials look
+like real ones, whereas `values_kind.yaml` uses `"abc"` and `"pw"`. **Make placeholders obviously
+fake** — `"dummy-dev-only"` — so nobody has to ask whether they're looking at a leak. See
+[`deck-notes/migration-pipeline.md`](./deck-notes/migration-pipeline.md).
 **[VISUAL: the swimlane — see deck-notes/migration-pipeline.md]**
 
 ### Slide 63 — Briefen
