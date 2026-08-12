@@ -2,5 +2,5 @@
 
 Host: {{ .Values.ingress.host }}
 Try:
-  curl -i -H "Host: gateway.localhost" http://127.0.0.1/
-  curl -i -H "Host: gateway.localhost" http://127.0.0.1{{ .Values.api.publicPath }}
+  curl -i -H "Host: {{ .Values.ingress.host }}" http://127.0.0.1/
+  curl -iL -H "Host: {{ .Values.ingress.host }}" http://127.0.0.1{{ .Values.api.publicPath }}

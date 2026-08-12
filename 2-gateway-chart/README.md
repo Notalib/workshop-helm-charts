@@ -38,11 +38,16 @@ Follow the rendered `NOTES.txt`:
 
 ```bash
 curl -i -H "Host: gateway.localhost" http://127.0.0.1/
-curl -i -H "Host: gateway.localhost" http://127.0.0.1/api
+curl -iL -H "Host: gateway.localhost" http://127.0.0.1/api
 ```
 
 You should get "Gateway is up for gw" and "Hello from backend". If `curl` hangs or 404s, fix that
 before templating anything — see **Stuck?** at the bottom.
+
+> **Why `-L` on the second one?** The chart's nginx config deliberately redirects `/api` → `/api/`
+> with a 308, so that both spellings work. Without `-L`, `curl` shows you the redirect instead of
+> following it, and you'd conclude the backend is broken when it isn't. Drop the `-L` once to see
+> it — misreading a redirect as a failure is a genuinely common half-hour.
 
 ---
 
@@ -107,7 +112,7 @@ whole point:
 ```bash
 helm upgrade gw ./ --set service.port=8080 --set backend.port=9000
 kubectl get pods -l app.kubernetes.io/instance=gw   # must reach 1/1 Ready, not 0/1
-curl -i -H "Host: gateway.localhost" http://127.0.0.1/api
+curl -iL -H "Host: gateway.localhost" http://127.0.0.1/api
 ```
 
 > **If the Pod sits at `0/1 Running`**, your probes are still pointing at port 80 while nginx now
@@ -123,7 +128,7 @@ This is why charts exist. Same chart, different values file:
 
 ```bash
 helm upgrade gw ./ -f values-dev.yml
-curl -i -H "Host: gateway-dev.localhost" http://127.0.0.1/api
+curl -iL -H "Host: gateway-dev.localhost" http://127.0.0.1/api
 
 helm upgrade gw ./ -f values-prod.yml
 kubectl get pods -l app.kubernetes.io/instance=gw    # 3 replicas now
@@ -176,20 +181,37 @@ curl -i -H "Host: gateway-broken.localhost" http://127.0.0.1/
 
 **Here's the twist: whether this breaks depends entirely on how well you did TASK 3.**
 
-- **Pod stuck at `0/1 Running` and the curl 503s?** You left something hardcoded. `service.port` is
-  now 1234, so nginx listens on 1234 — but if the probes still say `port: 80` they fail, the Pod
-  never becomes Ready, the Service has no endpoints, and the Ingress has nowhere to route. Find it
-  with `kubectl describe pod -l app.kubernetes.io/instance=gw`.
+`service.port: 1234` moves nginx off port 80. If you missed *any* of the places that port is
+referenced, you get one of these — and if you missed both, you get both at once, which is what
+makes this bug so annoying in real life:
+
+- **Pod stuck at `1/2 Running`** (two containers — the backend is fine, nginx isn't). Your probes
+  still say `port: 80` while nginx listens on 1234:
+  ```bash
+  kubectl describe pod -l app.kubernetes.io/instance=gw | grep "probe failed"
+  # Readiness probe failed: Get "http://10.42.0.170:80/": connect: connection refused
+  ```
+  The container is healthy; the *probe* is looking in the wrong place. So the Pod never becomes
+  Ready and never joins the Service's endpoints.
+- **`curl` returns 404, not 503.** A different bug, and a sneakier one:
+  ```bash
+  kubectl get svc gw-gateway -o jsonpath='{.spec.ports[*].port}'                          # 80
+  kubectl get ingress gw-gateway -o jsonpath='{.spec.rules[0].http.paths[0].backend.service.port.number}'  # 1234
+  ```
+  The Ingress routes to Service port 1234, and the Service only exposes 80. Traefik has no valid
+  backend at all, so it doesn't even get as far as a 503 — it 404s, which looks like a routing
+  misconfiguration rather than a port bug. This is the `service.yml` TODO.
 - **Everything still works?** Then you templated all nine consistently, and there was nothing to
-  break. That's the actual lesson: **the file isn't broken, incomplete templating is.** A value
-  referenced in five places and templated in four is the bug.
+  break. That's the actual lesson: **the file isn't broken, incomplete templating is.** One value
+  referenced in five places and templated in four is the bug — and note it produced two completely
+  different-looking symptoms.
 
 Now answer the three questions in the comments — especially `api.publicPath: /api/v2`, which
 *changes* behaviour without breaking anything. Which URL serves the backend now?
 
 ```bash
-curl -i -H "Host: gateway-broken.localhost" http://127.0.0.1/api      # ?
-curl -i -H "Host: gateway-broken.localhost" http://127.0.0.1/api/v2   # ?
+curl -iL -H "Host: gateway-broken.localhost" http://127.0.0.1/api      # ?
+curl -iL -H "Host: gateway-broken.localhost" http://127.0.0.1/api/v2   # ?
 ```
 
 ---
@@ -353,9 +375,12 @@ kubectl delete namespace gw-a gw-b
   Rancher Desktop fix as workshop #2 module 2:
   `sudo sysctl -w net.ipv4.ip_unprivileged_port_start=80`, then `rdctl shutdown && rdctl start`.
   Or skip the Ingress entirely: `kubectl port-forward deploy/gw-gateway 8888:80`.
-- **404 from the Ingress** — check the class matches your cluster:
-  `kubectl get ingressclass`. Rancher Desktop / k3d = `traefik`; kind + ingress-nginx = `nginx`.
-  Override with `--set ingress.className=...`.
+- **404 from the Ingress** — first just **wait a few seconds and retry.** Traefik takes a moment to
+  notice a new Ingress, so an immediate `curl` after `helm install` often 404s once and then works.
+  If it persists, check the class matches your cluster: `kubectl get ingressclass`. Rancher Desktop
+  / k3d = `traefik`; kind + ingress-nginx = `nginx`. Override with `--set ingress.className=...`.
+  A **persistent** 404 with a Ready Pod usually means the Ingress and the Service disagree about
+  the port — see TASK 5a.
 - **Template errors** — `helm template ./ --debug`. For "cannot find template" check the exact
   name in `_helpers.tpl` against the `include`.
 - **Pod `0/1 Running`** — a probe is failing. `kubectl describe pod -l app.kubernetes.io/instance=gw`
