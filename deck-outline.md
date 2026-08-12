@@ -22,7 +22,13 @@ deployment** from the #2 teaser, deliberately, for continuity.
 manifest you already wrote in module 5, with the parts that vary pulled out into variables.* Slide
 32 shows module 5's `backend.yaml` beside the templated version and lets the diff carry it.
 
-**68 slides / 240 minutes.** Density matches `Kubernetes_workshop.pptx` (71 slides / 4h).
+**71 slides / 240 minutes.** Density matches `Kubernetes_workshop.pptx` (71 slides / 4h).
+
+Three slides carry the migration-process fly-over — **5b** (why we're doing this), **62a** (the
+selection/prioritisation funnel) and **62b** (the pipeline and who owns what). They're lettered
+rather than renumbered so the existing numbering and its cross-references still hold. Together they
+cost ~5 minutes, ~4 of which come out of the open lab. See
+[`deck-notes/migration-pipeline.md`](./deck-notes/migration-pipeline.md).
 Timings per section are in the headers and mirror `README.md`'s run sheet.
 
 ---
@@ -72,6 +78,17 @@ during the theory, which is exactly what you want.
 - Modul 5: et helt system — backend + database — wired sammen i hånden
 
 **Notes:** Fast. Purely to activate the prior knowledge that the whole deck builds on.
+
+### Slide 5b — Hvorfor vi gør det her (3-års mandatet)
+**Content:**
+- Container-first-strategi: eksisterende systemer skal så vidt muligt containeriseres og migreres til
+  den nye platform **inden for 3 år**
+- Teknologirådet har vedtaget kriterier for **udvælgelse** og **prioritering**
+- Det I lærer i dag er Dev-teamets del af den proces
+
+**Notes:** 60 seconds, pure motivation, no detail. The point is that today is not an academic
+exercise — there is a mandate, there are agreed criteria, and the last 50 minutes apply them to their
+own system. The detail comes at slides 63b/63c; resist explaining the funnel here.
 
 ### Slide 6 — Modul 5, som I efterlod det
 **Content:** the four files on screen — `configmap.yaml`, `secret.yaml`, `postgres.yaml`,
@@ -528,10 +545,51 @@ minutes instead and protect the open lab.
 
 ---
 
-## 6. Dit eget system (slides 62–66) — 50 min
+## 6. Dit eget system (slides 62–66) — 46 min
+
+> **Timing:** slides 62a/62b cost ~4 min, so the lab itself is ~46 min rather than 50. Worth it —
+> a lab framed as the real first step of a real process gets taken more seriously. If you're behind,
+> **drop 62b, keep 62a**: the funnel changes how they fill in the canvas, the swimlane is context.
 
 ### Slide 62 — Section divider
 **Content:** `8.` Dit eget system — åbent lab
+
+### Slide 62a — Tragten: udvælgelse før prioritering ⭐
+**Content:**
+- **Udvælgelse** — *kan vi?* kompatibilitet · licens · afregning per instans · hardware · TIME
+- **Prioritering** — *hvornår?* kompleksitet · udgivelsesfrekvens · driftsbyrde · skalerbarhed ·
+  sårbarhed · teamets egen
+- Og det tredje svar: **Eliminate → nedlæg. Containerisér ikke et system der skal dø.**
+
+**Notes:** Teknologirådet's agreed criteria — say that, it gives them authority. The two-stage split
+is the point: a system can be possible to move and still be the wrong one to start first, and a
+high-priority system can turn out to be licensing-impossible. That's *why* `CANVAS.md` opens with the
+can-we gate — cheapest question, and it's disqualifying.
+
+Dwell on the Eliminate branch for 20 seconds. A migration process with no "don't" outcome is a
+machine for moving technical debt to a newer platform.
+**[VISUAL: the funnel — see deck-notes/migration-pipeline.md, top half]**
+
+### Slide 62b — Processen, og hvem der gør hvad
+**Content:** the six steps as swimlanes — Dev owns 1–4, step 5 is joint, Platform owns 6. Plus the
+wide cloud-readiness band running under 2–5.
+**Notes:** [`deck-notes/migration-pipeline.md`](./deck-notes/migration-pipeline.md). Two things to
+say out loud:
+
+1. **"Steps 2–5 are workshops #1, #1, #2 and #3 — you have already been trained for your half of
+   this."** This is the moment the whole series pays off. Pause after it.
+2. **The cloud-readiness band is drawn wide on purpose.** The Dockerfile is a day; getting config out
+   of the artifact, logs onto stdout and sessions out of memory is weeks to months of *application*
+   work. Estimates that miss this are wrong by an order of magnitude.
+
+Justify step 4 before someone objects that the manifests get thrown away: it separates "can this app
+run in Kubernetes?" from "is my chart right?", and templating working YAML beats writing a chart
+blind. First system: do it. Fifth: copy your last chart.
+
+Optional 30-second pilot mention: **BookCoverService has been all the way through** — four
+components, a 21-template chart at v1.11.12, four environments including `values_kind.yaml` for a
+local kind cluster. ⚠️ Show the chart *structure*, not `ci/helm-chart/values.yaml`.
+**[VISUAL: the swimlane — see deck-notes/migration-pipeline.md]**
 
 ### Slide 63 — Briefen
 **Content:**
