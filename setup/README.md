@@ -139,8 +139,8 @@ Strongly recommended — Go templates inside YAML are unpleasant without help.
 ## 7. Get the repo
 
 ```bash
-git clone https://github.com/notalib/workshop-helm-chart
-cd workshop-helm-chart
+git clone https://github.com/notalib/workshop-helm-charts
+cd workshop-helm-charts
 ```
 
 ---

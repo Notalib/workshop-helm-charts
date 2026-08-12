@@ -136,7 +136,7 @@ constantly.
 ### Solutions
 
 If you're stuck or want to compare, completed charts are on the
-[`solutions`](https://github.com/notalib/workshop-helm-chart/tree/solutions) branch:
+[`solutions`](https://github.com/notalib/workshop-helm-charts/tree/solutions) branch:
 
 ```bash
 git checkout -t origin/solutions

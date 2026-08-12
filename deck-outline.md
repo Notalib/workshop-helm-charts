@@ -238,7 +238,7 @@ helm lint / package / push             helm show values     # what knobs does it
 
 ### Slide 27 — Opgaven
 **Content:**
-- `git clone https://github.com/notalib/workshop-helm-chart`
+- `git clone https://github.com/notalib/workshop-helm-charts`
 - Følg [`1-simplest-chart/README.md`](./1-simplest-chart/README.md)
 - Én Deployment, én ConfigMap, tre values — **ingen templating endnu**
 - Mål: install → upgrade → `helm template` vs `get manifest` → history → rollback
