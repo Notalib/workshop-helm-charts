@@ -29,6 +29,13 @@ Faster than writing prose, and it makes the pattern across the room visible.
 - [ ] The image is huge or takes too long to build
 - [ ] It needs a base image we're not allowed to pull from Docker Hub
 
+**Commercial / licensing** — the ones that stop the work before it starts
+- [ ] Proprietary purchased system, vendor offers no container support
+- [ ] The licence forbids containerisation, or containerising would void support
+- [ ] Billed per instance — running it in Kubernetes gets expensive
+- [ ] Vendor won't support it in a container even though it technically works
+- [ ] Should arguably be decommissioned rather than migrated (TIME: Eliminate)
+
 **Platform**
 - [ ] Needs a Windows host
 - [ ] Needs a licence server / dongle / MAC-locked licence

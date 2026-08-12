@@ -114,6 +114,10 @@ The last 50 minutes, and the homework. Pick a system you're responsible for and 
 or one honest slice of it — toward Kubernetes. Fill in the [canvas](./3-your-own-system/CANVAS.md),
 get a chart skeleton up, and write down [what stopped you](./3-your-own-system/BLOCKERS.md).
 
+Not a hypothetical: [`PROCESS.md`](./3-your-own-system/PROCESS.md) shows the agreed six-step process
+for moving KB systems onto the platform, who owns each step, and why **this lab is step 1** —
+including the criteria that decide whether a system is a candidate at all.
+
 ### [edu — The greetings chart](./edu-greetings-chart/README.md)
 Not an exercise — the finished article. Workshop #2 module 5's Spring Boot + Postgres system as one
 chart, with a worked example of every pattern you'll need: a Postgres **subchart**, a migration

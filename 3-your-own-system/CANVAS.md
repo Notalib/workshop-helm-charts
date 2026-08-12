@@ -27,6 +27,37 @@ of it.
 
 ---
 
+## Gate: can this system be moved at all?
+
+**Answer these five first.** They take two minutes, they're the criteria Teknologirådet actually
+agreed, and any one of them can be **disqualifying** — it would be a shame to chart a system for an
+hour and then discover the licence forbids it. See [`PROCESS.md`](./PROCESS.md).
+
+| | | If yes → |
+|---|---|---|
+| Is it a **proprietary purchased system** with no container support from the vendor? | ☐ yes ☐ no | probably not a candidate — ask the vendor |
+| Does the **licence** forbid it, or would containerising **void support**? | ☐ yes ☐ no | **stop.** Commercial blocker, not a technical one |
+| Is it billed **per instance**, so running it in Kubernetes gets expensive? | ☐ yes ☐ no | needs a cost decision before any technical work |
+| Does it need **special hardware** (dongle, GPU, fixed MAC, a specific host)? | ☐ yes ☐ no | usually a blocker — note exactly what and why |
+| Does it need a **Windows host**? | ☐ yes ☐ no | not this platform |
+
+**And the question people forget to ask:**
+
+> Should this system exist at all in three years?
+>
+> ☐ **Invest** — valuable, healthy. Migrate when convenient.
+> ☐ **Migrate** — valuable but dated or poorly supported. **This is the candidate quadrant.**
+> ☐ **Tolerate** — works, low value. Only move it if it's nearly free to bring along.
+> ☐ **Eliminate** — low value, poor technical state. **Decommission it. Don't containerise it.**
+
+Containerising a system that should be switched off is the most expensive kind of wasted effort —
+you pay to move technical debt onto a new platform and then still have to retire it. If you ticked
+Eliminate, the honest answer is to stop here and say so.
+
+**All five gate answers "no" and you ticked Invest or Migrate?** Carry on.
+
+---
+
 ## Components
 
 One row per process that runs. A "component" is anything you would start separately — a web app, a

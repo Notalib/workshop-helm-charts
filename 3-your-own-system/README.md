@@ -3,6 +3,11 @@
 The last 50 minutes are yours. Pick a system **you** are responsible for and start moving it —
 or one honest slice of it — toward running on Kubernetes.
 
+> **This is not a hypothetical exercise.** KB is moving existing systems onto the platform over the
+> next three years, there's an agreed process for it, and **what you're doing now is step 1 of that
+> process**. See [`PROCESS.md`](./PROCESS.md) — it's one screen, and it's worth two minutes before
+> you start.
+
 This is not a tidy exercise with a solution branch. It's the actual work, and it's the homework
 until the next workshop. Nobody finishes. That's expected and it's fine: **the goal is to find out
 exactly what stands between your system and a cluster**, which is information you can only get by
