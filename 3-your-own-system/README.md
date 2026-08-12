@@ -85,6 +85,10 @@ helm create my-system
 > understand at 40 lines beats a chart you inherited at 400. You can always add the HPA back when
 > you actually need autoscaling.
 
+Keep [`BEST-PRACTICES.md`](../BEST-PRACTICES.md) open while you do this — the "what to template"
+and "values.yaml is your API" sections are exactly the decisions you're about to make, and the
+pre-flight checklist at the bottom tells you when you're done.
+
 Target for this tier:
 
 - `Chart.yaml` with a real name, description and `appVersion`

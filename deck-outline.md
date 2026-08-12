@@ -354,6 +354,7 @@ blunt); `edu-greetings-chart` hashes the config (restarts only when it changed).
 - Named ports i stedet for tal gentaget fem steder
 - Ikke alt skal være konfigurerbart
 - `helm lint` i CI
+- → alt dette står samlet i [`BEST-PRACTICES.md`](./BEST-PRACTICES.md)
 
 **Notes:** The first bullet bricks charts permanently and is worth 30 seconds — a changing value in
 a selector makes the Deployment un-upgradeable. The third is the design point: `charts/postgres`
@@ -581,7 +582,10 @@ from" from three people reframes it from personal failure to organisational fact
 - Køre samme chart som dev og prod, og rulle tilbage når det går galt
 - Publicere det som et OCI-artefakt
 
-**Notes:** Then the honest boundary: getting it deployed automatically from git, with secrets
+Og [`BEST-PRACTICES.md`](./BEST-PRACTICES.md) som huskeliste bagefter.
+
+**Notes:** Point at the pre-flight checklist at the bottom of it — that's the thing worth using on
+a real PR. Then the honest boundary: getting it deployed automatically from git, with secrets
 handled properly, is the next problem — and a bigger one than it looks.
 
 ### Slide 68 — Hjemmearbejde og workshop #4
