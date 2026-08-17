@@ -9,8 +9,10 @@ roll it back.
 
 > **`values.yaml`** — the chart's *defaults*, and its API. Anything not in here is not
 > configurable, and anything in here is a promise to whoever installs your chart.
+
 > **`_helpers.tpl`** — named template definitions, available in every other template via
 > `include`. This is where naming conventions live, so they're defined once.
+
 > **`NOTES.txt`** — is itself a template. It is the only documentation most people will read.
 
 ```

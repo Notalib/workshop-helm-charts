@@ -7,12 +7,14 @@ remembers afterwards.
 
 > **Chart** — a directory of templates + a `values.yaml` of defaults + a `Chart.yaml` of
 > metadata. A chart is a *package*, and it is inert until you install it.
+
 > **Release** — one *installation* of a chart, under a name you choose. The same chart can be
 > installed many times, in many namespaces, as many releases.
+
 > **Revision** — one version of a release. Every `install`, `upgrade` and `rollback` creates a
 > new numbered revision, and Helm keeps the old ones.
 
-You may recognise the HTML this chart serves — it's the same page you mounted from a ConfigMap
+You may recognize the HTML this chart serves — it's the same page you mounted from a ConfigMap
 in [workshop #2, module 3](https://github.com/notalib/workshop-kubernetes/tree/main/3-config-and-env).
 Same Kubernetes objects. The only new thing is the packaging.
 
