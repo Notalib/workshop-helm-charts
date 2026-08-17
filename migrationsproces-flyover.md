@@ -123,7 +123,7 @@ forretningskritiske system er ikke det første man skal øve sig på.
 | 1 | **Udvælg system** ud fra kriterierne | Dev-team | nominering + kortlægning |
 | 2 | **Containerisér komponenter** | Dev-team | en Dockerfile per komponent, i et registry |
 | 3 | **`compose.yml` til lokal udvikling** | Dev-team | hele stakken kører på en laptop |
-| 4 | **Manuel opsætning i Kubernetes** *(anbefalet)* | Dev-team | fungerende manifests |
+| 4 | **Manuel opsætning i Kubernetes via Rancher** *(anbefalet)* | Dev-team | fungerende manifests |
 | 5 | **Konvertér til Helm chart** | Dev-team **+** Platform-team | et linted, testet chart |
 | 6 | **GitOps-deployment og CI/CD** | Platform-team | ArgoCD-app + pipeline |
 | — | **Cloud-readiness-oprydning** | Dev-team, *parallelt med 2–5* | se afsnit 7 |
@@ -136,8 +136,11 @@ Fordi det adskiller to spørgsmål der ellers skal fejlsøges samtidig:
 2. *Er mit chart korrekt?*
 
 Får man begge fejl på én gang, er de svære at skille. Og de fungerende manifests er præcis det man
-templater chartet ud fra — det er nemmere at gøre kørende YAML konfigurerbar end at skrive et chart i
-blinde.
+templater chartet ud fra 
+
+⭐ Det er nemmere at gøre kørende YAML manifester konfigurerbar end at skrive et chart i blinde.
+
+⭐ Rancher gør det nemt for udviklere **visuelt** og uden omfattende YAML forståelse at opsætte et system i Kubernetes.
 
 For det **første** system i et team er trinnet reelt obligatorisk. Har teamet allerede et chart de
 kan kopiere fra, kan de gå direkte til trin 5.
@@ -201,9 +204,11 @@ Credentials hører ikke i en values-fil. Values-filer bliver committet, diffet, 
 og sendt til sprogmodeller. Mulighederne, groft rangeret:
 
 1. **External Secrets Operator** — chartet refererer en Secret; operatoren henter værdien fra
-   Vault / Key Vault / AWS SM. Oftest det rigtige svar.
-2. **Sealed Secrets / SOPS** — krypterede værdier, forsvarligt at committe.
-3. **`existingSecret`** — chartet tager kun *navnet* på en Secret og templater aldrig værdien.
+   Vault / Key Vault / AWS SM.
+   - Oftest det rigtige svar.
+   - Den nye platform kommer med HashiCorp Vault.
+3. **Sealed Secrets / SOPS** — krypterede værdier, forsvarligt at committe.
+4. **`existingSecret`** — chartet tager kun *navnet* på en Secret og templater aldrig værdien.
    Billigst at indføre, og bør altid tilbydes som udvej.
 
 ## 8. Pilot: BookCoverService
