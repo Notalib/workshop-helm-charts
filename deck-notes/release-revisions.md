@@ -7,8 +7,8 @@ The payoff slide. This is what `kubectl apply` genuinely cannot give you.
 ```
   CHART (the package)              RELEASES (installations of it)
   ┌──────────────┐
-  │  greetings   │  ──install──►   "dev"  in namespace dev    (1 replica)
-  │   v1.0.0     │  ──install──►   "prod" in namespace prod   (3 replicas)
+  │  greetings   │  ──install── ►  "dev"  in namespace dev    (1 replica)
+  │   v1.0.0     │  ──install── ►  "prod" in namespace prod   (3 replicas)
   └──────────────┘                 one chart, many releases
 
 
@@ -17,7 +17,7 @@ The payoff slide. This is what `kubectl apply` genuinely cannot give you.
   rev 1        rev 2        rev 3        rev 4        rev 5
   install      upgrade      upgrade      upgrade      rollback→3
   v1.0.0       v1.0.1       v1.1.0       v1.2.0       v1.1.0
-  ✅           ✅           ✅           ❌ FAILED    ✅
+  ✅           ✅           ✅            ❌ FAILED    ✅
   │            │            │            │            │
   └────────────┴────────────┴────────────┴────────────┘
    superseded   superseded   superseded    failed      deployed
@@ -53,7 +53,7 @@ The payoff slide. This is what `kubectl apply` genuinely cannot give you.
      apply new revision
             │
             ▼
-     wait for healthy  ──── healthy? ────► ✅ done
+     wait for healthy  ──── healthy? ──── ► ✅ done
             │
         not healthy within --timeout
             │

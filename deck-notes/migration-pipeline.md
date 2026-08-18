@@ -9,48 +9,49 @@ half of a real process." Lands best immediately before the open lab.
   ALLE SYSTEMER
        │
        ▼
-  ┌─ 1. UDVÆLGELSE ──────┐        ┌─ 2. PRIORITERING ────┐
-  │  "Kan vi?"           │───────►│  "Hvornår?"          │
-  │  kompatibilitet      │  kand- │  kompleksitet        │
-  │  licens / afregning  │  ida-  │  udgivelsesfrekvens  │
-  │  hardware            │  ter   │  driftsbyrde         │
-  │  TIME-placering      │        │  skalerbarhed        │
-  └──────────┬───────────┘        │  sårbarhed           │
-             │                    │  teamets egen        │
-      ELIMINATE → NEDLÆG          └──────────┬───────────┘
-      (containerisér ikke)                   │ næste system
-                                             ▼
+  ┌─ 1. UDVÆLGELSE ──────┐               ┌─ 2. PRIORITERING ────┐
+  │  "Kan vi?"           │───────────── ►│  "Hvornår?"          │
+  │  kompatibilitet      │  kandidater   │  kompleksitet        │
+  │  licens / afregning  │               │  udgivelsesfrekvens  │
+  │  hardware            │               │  driftsbyrde         │
+  │  TIME-placering      │               │  skalerbarhed        │
+  └──────────┬───────────┘               │  sårbarhed           │
+             │                           │  teamets egen        │
+      ELIMINATE → NEDLÆG                 └──────────┬───────────┘
+      (containerisér ikke)                          │ næste system
+                                                    ▼
 
   ─────────────────────────────────────────────────────────────────────
    DEV-TEAM                                    │  PLATFORM-TEAM
   ─────────────────────────────────────────────────────────────────────
 
-   ① Udvælg system                             │
+   1. Udvælg system                            │
         │                                      │
         ▼                                      │
-   ② Containerisér komponenter    ← workshop #1│
+   2. Containerisér komponenter   ← workshop #1│
         │                                      │
         ▼                                      │
-   ③ compose.yml, lokal dev       ← workshop #1│
+   3. compose.yml, lokal dev      ← workshop #1│
         │                                      │
         ▼                                      │
-   ④ Manuelt i Kubernetes         ← workshop #2│
+   4. Manuelt i Kubernetes        ← workshop #2│
         │  (anbefalet: giver de manifests      │
         │   chartet templates ud fra)          │
         ▼                                      │
-   ⑤ Helm chart  ◄══════ sammen ══════════════►│  ⑤ Helm chart
-        │                    ▲                 │
+   5. Helm chart ◄══════ sammen ══════════════►│  ⑤ Helm chart
+        │                  ▲                   │
         │              workshop #3             │
         │                                      ▼
-        │                                      ⑥ GitOps + CI/CD
-        │                                      │   ArgoCD, pipeline
-        └──────────────────────────────────────┴──►  KØRER I DRIFT
+        │                                      6. GitOps + CI/CD
+        │                                      │  ArgoCD, pipeline
+        │                                      │
+        └──────────────────────────────────────┴──────── ►  KØRER I DRIFT
 
-  ═════════════════════════════════════════════════════════════════════
-   ⚠  CLOUD-READINESS  ── løber parallelt med ②–⑤, og er hvor tiden går
+  ═════════════════════════════════════════════════════════════════════════════════
+   ⚠  CLOUD-READINESS  ── løber parallelt med 2-5, og er primært hvor tiden bruges.
       config · logs · stateless · disposability · backing services
       + health-endpoints, probes, resource limits, secrets
-  ═════════════════════════════════════════════════════════════════════
+  ═════════════════════════════════════════════════════════════════════════════════
 ```
 
 ## Talking points
