@@ -233,7 +233,7 @@ versioning and distribution — and because everything you want to *install* is 
 - ❌ Ikke en garanti for at din app virker
 
 **Notes:** Stating the limits early buys credibility for everything else, and each ❌ is picked up
-later: CD on slide 58, secrets on 57, reconciliation on 22, and "your app still has to work" the
+later: CD on slide 59, secrets on 58, reconciliation on 22, and "your app still has to work" the
 moment their first Pod CrashLoops.
 
 ### Slide 25 — Kommandoerne I får brug for
@@ -506,15 +506,22 @@ helm install x oci://<registry>/<project>/greetings --version 1.0.0
 images. Same registry, same auth, same mental model. A chart version must mean exactly one thing
 forever, so registries reject re-pushing an existing version. Bump `version` every time.
 
-### Slide 58 — Secrets hører ikke i en values-fil
+### Slide 58 — Values & Secrets
 **Content:**
-- **External Secrets Operator** — henter fra Vault / Key Vault / AWS SM
-- **Sealed Secrets / SOPS** — krypteret, sikkert i git
-- **`existingSecret`** — chartet kender kun *navnet*
+- `values.yaml` indeholder konfiguration — **ikke credentials**
+- **Vault** opbevarer secrets
+- **External Secrets Operator** henter dem og opretter almindelige Kubernetes Secrets
+- Chartet kender kun **Secret-navnet og key'en** — fx `existingSecret`
 
-**Notes:** Show the number: `edu-greetings-chart`'s `values-prod.yaml` renders **zero** Secrets,
-because it names one instead of containing one. Tie forward to the open lab's governance rule —
-they're about to touch their own real config.
+`Vault → External Secrets Operator → Kubernetes Secret → Pod`
+
+**Notes:** Keep Vault and External Secrets Operator at the level of the flow above — how they are
+configured and authenticated is a platform concern, not part of this workshop. The chart-author
+takeaway is the interface: accept a Secret name and key, then use them through `secretKeyRef`.
+Show `database.existingSecret: greetings-db-credentials` from `edu-greetings-chart`'s
+`values-prod.yaml`, and the number: it renders **zero** Secrets because it names one instead of
+containing one. Tie forward to the open lab's governance rule — they're about to touch their own
+real config.
 
 ### Slide 59 — Hvem kører egentlig `helm upgrade`? ⭐
 **Content:** laptop → cluster (❌ no audit trail, creds on laptops) vs git → ArgoCD/Flux → cluster
