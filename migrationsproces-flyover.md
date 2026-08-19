@@ -9,8 +9,10 @@
 Som del af overgangen til en **container-first**-strategi skal eksisterende systemer så vidt muligt
 containeriseres og migreres til den nye Kubernetes-platform **inden for de næste 3 år**.
 
-Dette dokument er den høje flyvehøjde: *hvordan* går et system fra "kører som i dag" til "kører på
-platformen", hvem gør hvad, og hvordan vælger vi hvilke systemer der skal flyttes hvornår.
+Dette dokument er en "high-altitude" indflyvning på:
+- *Hvordan* går et system fra "kører som i dag" til "kører på platformen"?,
+- Hvordan vælger vi hvilke systemer der skal flyttes hvornår.
+- Hvem gør hvad hvornår?
 
 Det er **ikke** en detaljeret opskrift. Den kommer senere, og den bliver skrevet ud fra de faktiske
 forhindringer vi støder på med de første systemer.
