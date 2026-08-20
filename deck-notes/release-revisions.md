@@ -16,7 +16,7 @@ The payoff slide. This is what `kubectl apply` genuinely cannot give you.
 
   rev 1        rev 2        rev 3        rev 4        rev 5
   install      upgrade      upgrade      upgrade      rollback→3
-  v1.0.0       v1.0.1       v1.1.0       v1.2.0       v1.1.0
+  app v1.0.0   app v1.0.1   app v1.1.0   app v1.2.0   app v1.1.0
   ✅           ✅           ✅            ❌ FAILED    ✅
   │            │            │            │            │
   └────────────┴────────────┴────────────┴────────────┘
@@ -33,7 +33,7 @@ The payoff slide. This is what `kubectl apply` genuinely cannot give you.
 - **Chart ≠ release.** The chart is the package; a release is one installation of it, under a name
   you choose. Same chart installed twice = two independent releases. This trips everyone up once.
 - **Every operation is a numbered revision** — install, upgrade *and* rollback. `helm history`
-  shows the lot, with the values used.
+  shows the lot; `helm get values prod --revision N -n prod` retrieves a revision's values.
 - **Rollback doesn't rewind history, it appends to it.** Revision 5 above is "the content of
   revision 3, deployed now." Nothing is deleted. Exactly like `git revert`, not `git reset`.
 - **The history lives in the cluster**, as one Secret per revision in the release's namespace:
@@ -42,8 +42,8 @@ The payoff slide. This is what `kubectl apply` genuinely cannot give you.
   ```
   So a colleague with cluster access sees the same history you do. And deleting the namespace
   deletes the history.
-- **`helm get values <rel> --revision N`** — the values a past revision ran with. Genuinely useful
-  during an incident: *what changed?*
+- **`helm get values prod --revision N -n prod`** — the values a past revision ran with. Genuinely
+  useful during an incident: *what changed?*
 
 ## The `--rollback-on-failure` slide
 
