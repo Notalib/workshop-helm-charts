@@ -40,7 +40,7 @@ kubectl port-forward deploy/simplest-nginx 8888:80
 Now look at what Helm created, using plain `kubectl` — nothing here is Helm-specific:
 
 ```bash
-kubectl get deploy,configmap -l app.kubernetes.io/instance=simple
+kubectl get deploy,configmap
 ```
 
 ---
