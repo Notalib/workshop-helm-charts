@@ -22,20 +22,20 @@ upgrades, who?* — and it's the honest boundary of what this workshop taught.
   │ cluster  │                                   │ merge to main
   └──────────┘                                   ▼
                                             ┌──────────┐
-  ❌ no audit trail                          │ ArgoCD / │  ← watches the repo
-  ❌ needs cluster creds on laptops          │  Flux /  │     runs helm
-  ❌ "works on my machine" values            │   CI     │     continuously
-  ❌ nobody knows what's deployed            └────┬─────┘        reconciles
+                                            │ ArgoCD / │  ← watches the repo
+                                            │  Flux /  │     runs helm
+                                            │   CI     │     continuously
+                                            └────┬─────┘        reconciles
                                                  │
                                                  ▼
                                             ┌──────────┐
                                             │ cluster  │
                                             └──────────┘
 
-                                            ✅ git IS the audit trail
-                                            ✅ no human needs cluster creds
-                                            ✅ the deploy button is a MERGE
-                                            ✅ drift is detected and corrected
+  ❌ no audit trail                        ✅ git IS the audit trail
+  ❌ needs cluster creds on laptops        ✅ no human needs cluster creds
+  ❌ "works on my machine"                 ✅ the deploy button is a MERGE
+  ❌ who even knows what's deployed?       ✅ drift is detected and corrected
 ```
 
 ## Talking points

@@ -9,3 +9,6 @@ edu-greetings-chart/charts/*.tgz
 # Chart.lock adds nothing for a file:// dependency — the source subchart is in
 # this repo, so there is no version to pin, only a digest to drift.
 edu-greetings-chart/Chart.lock
+
+# Temporary files
+~$*.pptx

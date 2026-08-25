@@ -24,6 +24,11 @@ manifest you already wrote in module 5, with the parts that vary pulled out into
 
 **71 slides / 240 minutes.** Density matches `Kubernetes_workshop.pptx` (71 slides / 4h).
 
+**Visual production:** every visual marker says whether it should be a **generated image**, built
+from **native PowerPoint** shapes/text, or shown as **live code/screenshot**. Generated images are
+reserved for conceptual flows and metaphors with very little text; exact YAML, timelines and
+comparisons stay editable. See [`deck-notes/visual-production-guide.md`](./deck-notes/visual-production-guide.md).
+
 Three slides carry the migration-process fly-over — **5b** (why we're doing this), **62a** (the
 selection/prioritisation funnel) and **62b** (the pipeline and who owns what). They're lettered
 rather than renumbered so the existing numbering and its cross-references still hold. Together they
@@ -48,7 +53,8 @@ Timings per section are in the headers and mirror `README.md`'s run sheet.
 
 **Notes:** Land the arc in 30 seconds. The last line is not a joke — the open lab's `BLOCKERS.md`
 genuinely decides the next workshop's topic. Say so; it changes how seriously they fill it in.
-**[VISUAL: three-step progression, image → manifests → package. Reuse the Lego motif.]**
+**[VISUAL — GENERATED IMAGE: three-step progression, image → manifests → Helm package. Reuse the
+Lego motif; include the short labels `Containerisation`, `Kubernetes`, `Helm`.]**
 
 ### Slide 3 — Workshop indhold
 **Content:** the run sheet, with `[+Exercise]` markers — same layout as #2's slide 3.
@@ -96,7 +102,8 @@ own system. The detail comes at slides 63b/63c; resist explaining the funnel her
 **Notes:** Have the real files open, not a picture of them. Point at the "three things must agree"
 warning about `POSTGRES_HOST` — it comes back on slide 34 as a one-line helper, and that payoff
 only works if you plant it here.
-**[VISUAL: four YAML files side by side, the POSTGRES_HOST value circled in all three places it appears.]**
+**[VISUAL — LIVE CODE/SCREENSHOT: four YAML files side by side, the POSTGRES_HOST value circled in
+all three places it appears.]**
 
 ### Slide 7 — Spørgsmålet fra sidst
 **Content:** > *"Skal jeg virkelig copy-paste al den YAML for hver app og hvert miljø?"*
@@ -160,14 +167,16 @@ gone. Helm 3 deleted it.
 Same bricks. Now shippable, and someone else can build it.
 **Notes:** The one analogy in the deck, and it extends #1's *Container = Legoklods* rather than
 competing with it. Don't over-work it — one slide, then back to concrete.
-**[VISUAL: pile of loose bricks → boxed Lego set with parts list. Reuse #1's brick styling.]**
+**[VISUAL — GENERATED IMAGE: pile of loose bricks → boxed Lego set with parts list. Reuse #1's
+brick styling; include the short labels `Manifest` and `Chart`.]**
 
 ### Slide 15 — Chart anatomy
 **Content:** the directory tree.
 **Notes:** Full talking points in [`deck-notes/chart-anatomy.md`](./deck-notes/chart-anatomy.md).
 Emphasise: only `Chart.yaml` + `templates/` are mandatory; `_` prefix means "not a manifest";
 `NOTES.txt` **is a template** (module 2 has a task where it lies).
-**[VISUAL: annotated directory tree — see deck-notes/chart-anatomy.md]**
+**[VISUAL — NATIVE PPT: annotated directory tree — see deck-notes/chart-anatomy.md. Exact
+filenames must remain editable and sharp.]**
 
 ### Slide 16 — `Chart.yaml`
 **Content:** `apiVersion: v2` · `name` · `version` · `appVersion` · `dependencies`
@@ -179,51 +188,149 @@ uses. Mention only if asked.)
 ### Slide 17 — `values.yaml` er et API
 **Content:**
 - Chart-defaults — og chartets **offentlige kontrakt**
-- Hver key er et løfte til den der installerer
+- Hver indstilling er en del af den kontrakt
 - At omdøbe en value er et **breaking change** → derfor versionsnummeret
 
 **Notes:** The mindset shift that separates a chart people can use from one only its author can.
 Most first charts expose either everything or nothing.
 
 ### Slide 18 — Release ≠ chart
-**Content:** one chart → many releases (`dev`, `prod`, different namespaces), each independent.
-**Notes:** Trips up everyone exactly once. Module 1 TASK 6 makes them feel it: install the same
-chart twice, watch it collide on hardcoded object names, then fix it with the release name.
+**Content:**
+
+**Ét chart. Flere uafhængige releases.**
+
+```text
+          greetings chart · v1.0.0
+              │
+          ┌─────────────┴─────────────┐
+          ▼                           ▼
+        release: dev                 release: prod
+        namespace: dev               namespace: prod
+        1 replica                     3 replicas
+        values-dev.yaml               values-prod.yaml
+```
+
+Bottom line: **Chartet er pakken. Et release er én navngivet installation af pakken.**
+
+**Notes:** Start by pointing only at the chart: *"Det her er pakken — den kører ikke nogen
+steder endnu."* Reveal `dev`, then `prod`. Same chart version, but independent release name,
+namespace, values, resources and history. Upgrading `dev` does nothing to `prod`.
+
+Ask: *"Hvis vi installerer chartet én gang til, har vi så fået et nyt chart eller et nyt
+release?"* Answer: a new release. Then ask what must differ for the two installations to coexist.
+The release name must flow into resource names; hardcoded names collide when releases share a
+namespace. Different namespaces hide that collision but do not fix the chart.
+
+Module 1 TASK 6 makes them feel exactly this failure, then fixes it with `.Release.Name`. Avoid
+introducing revisions yet — keep this slide about identity and multiplicity. Transition with:
+*"Nu følger vi kun `prod`. Hvad sker der med dét release over tid?"*
+
+**[VISUAL — NATIVE PPT: rebuild `deck-assets/generated/slide-18-chart-and-releases-v1.png` as a
+simple branch diagram so all labels remain editable. One chart package at the top; two equal
+namespace boundaries below, named `dev` and `prod`. Inside each boundary, show the same three
+resource icons at different scale/count only where replicas differ. Use blue for the chart and
+`dev`, green for `prod`; no success/failure colour semantics yet. Build 1: chart. Build 2: dev.
+Build 3: prod + bottom line. Do not include `stage` — two releases make the distinction more
+quickly and match the exercise.]**
 
 ### Slide 19 — Revisioner
-**Content:** the revision timeline. install → upgrade → upgrade → **failed** → rollback.
-**Notes:** [`deck-notes/release-revisions.md`](./deck-notes/release-revisions.md). Key point:
-rollback **appends** a revision, it doesn't rewind. Like `git revert`, not `git reset`.
-**[VISUAL: revision timeline — see deck-notes/release-revisions.md]**
+**Content:**
+
+**Ét release over tid: `prod`**
+
+```text
+REVISION      1             2             3             4             5
+HANDLING   install       upgrade       upgrade       upgrade       rollback → 3
+APP        v1.0.0        v1.0.1        v1.1.0        v1.2.0        v1.1.0
+STATUS     superseded    superseded    superseded    failed        deployed
+```
+
+```bash
+helm history prod -n prod
+```
+
+Bottom line: **Rollback går ikke tilbage i historikken — den tilføjer en ny revision.**
+
+Footer: `git revert`, ikke `git reset`
+
+**Notes:** [`deck-notes/release-revisions.md`](./deck-notes/release-revisions.md). Continue with
+the `prod` release from slide 18. Reveal revisions 1–3 from left to right: install and every upgrade
+append a numbered snapshot of the rendered release state and the values used. Keep chart version
+out of the visual; the `APP` row deliberately tracks the app versions the room can recognise. If
+asked, a revision stores release state, not merely an image tag.
+
+Reveal revision 4 in red and stop: the failed attempt remains visible in history. Then reveal
+revision 5 to its right and draw a curved reference arrow **from revision 5 to revision 3** labelled
+`samme indhold`. Time still moves right. Revision 5 is a new deployment whose content matches the
+last known-good revision; it does not erase revisions 4 or 3.
+
+Ask: *"Efter rollback — hvad er det aktive revisionsnummer?"* The tempting answer is 3; the
+correct answer is **5**. Then land the analogy: rollback behaves like `git revert`, not
+`git reset`. `helm history` is the supported interface for reading this history; slide 20 opens
+the hood and shows where Helm stores it. Do not explain automatic rollback here — slide 55 owns
+`--rollback-on-failure` and its limits.
+
+**[VISUAL — NATIVE PPT: five large nodes on one horizontal timeline. Put the revision number in
+each node and the operation, app version and status directly below it. Revisions 1–3 are neutral
+blue/grey, revision 4 alone is red, and revision 5 is green. Connect all nodes with a thin
+left-to-right line. Add a curved dashed reference arrow from revision 5 back to revision 3's
+content, but never point the main timeline backwards. Build 1: revisions 1–3. Build 2: failed
+revision 4. Build 3: revision 5 + reference arrow. Build 4: bottom line and git footer.]**
 
 ### Slide 20 — Hvor bor et release?
 **Content:** `kubectl get secret -l owner=helm` — one Secret per revision, in the namespace.
 **Notes:** Two consequences: there's no Helm server, and the history belongs to the *namespace*,
-not to your laptop. A colleague sees the same `helm history`. Delete the namespace and it's gone.
+not to your laptop. A colleague sees the same `helm history`. The `kubectl` command deliberately
+shows the underlying storage; use `helm history` to inspect a release. Delete the namespace and
+it's gone.
 
 ### Slide 21 — Values precedence
 **Content:** chart defaults → `-f a.yml` → `-f b.yml` → `--set` → `--set-string`
 **Notes:** [`deck-notes/values-precedence.md`](./deck-notes/values-precedence.md). Say the two
 gotchas out loud: **maps merge, lists replace**, and `--set` is **not sticky** across upgrades.
-**[VISUAL: precedence arrow + the map-merge vs list-replace comparison]**
+**[VISUAL — NATIVE PPT: precedence arrow + the map-merge vs list-replace comparison. Reveal the
+precedence row first, then the two merge examples.]**
 
 ### Slide 22 — Hvor Helms arbejde slutter ⭐
-**Content:** values + templates → render → plain manifests → **API server** ═══ Helm stops here
-═══ → controllers reconcile forever.
+**Content:**
+
+`Values + templates → render → plain manifests → API server ═══ Helm stopper her ═══`
+
+- **Helm renderer og afleverer** — clusteret modtager almindelige Kubernetes-manifests
+- **Kubernetes holder det kørende** — controllers reconciler Deployment, ReplicaSet og Pods
+- **Helm følger ikke med** — sletter du en Pod, er det ReplicaSet-controlleren der genskaber den
+
+Bottom line: **Helm = template engine + release ledger. Kubernetes = runtime + reconciliation.**
 **Notes:** **The most important slide in the deck.** [`deck-notes/render-pipeline.md`](./deck-notes/render-pipeline.md).
 Name the misconception explicitly: *"Helm deploys my app and keeps it running"* — no. Helm renders
 and submits; Kubernetes keeps it running. Test question for the room: *if I delete a Pod from a Helm
 release, what recreates it?* (The ReplicaSet controller. Helm isn't involved and isn't aware.)
 Two payoffs: everything from #2 still applies, and `helm template` needs no cluster.
-**[VISUAL: the render pipeline — see deck-notes/render-pipeline.md]**
+**[VISUAL — GENERATED IMAGE: the render pipeline — see deck-notes/render-pipeline.md. Include short
+labels for `Values`, `Templates`, `Manifests`, `API server`, `Controllers` and `Pods`; make the
+laptop/cluster boundary dominant and add “Helm stopper her” in PowerPoint.]**
 
 ### Slide 23 — Helm vs Kustomize
-**Content:** templating vs overlay patching — the honest comparison.
+**Content:**
+
+| **Helm — templating & packaging** | **Kustomize — overlay patching** |
+|---|---|
+| Template + values → manifests | Base manifests + patches → manifests |
+| Ét versioneret, distribuerbart chart | Alle filer er gyldig Kubernetes-YAML |
+| Godt når andre skal installere systemet | Godt til egne apps på egne clusters |
+| Registry, dependencies og release-historik | Indbygget i `kubectl`; intet templatesprog |
+| Ulempe: `{{ }}`, whitespace og ekstra kompleksitet | Ulempe: ingen egentlig packaging eller distribution |
+
+**Tommelfingerregel:** Skal softwaren **distribueres og versioneres** → Helm. Skal egne manifests
+blot **varieres mellem få miljøer** → Kustomize kan være enklere.
+
+Footer: **De kan kombineres — ArgoCD understøtter begge.**
 **Notes:** [`deck-notes/helm-vs-kustomize.md`](./deck-notes/helm-vs-kustomize.md). Someone will
 ask, so get ahead of it. Concede the real point: for your own app on your own clusters with two
 environments, Kustomize is simpler and it's already in `kubectl`. Helm wins on packaging,
 versioning and distribution — and because everything you want to *install* is a chart.
-**[VISUAL: side-by-side, see deck-notes/helm-vs-kustomize.md]**
+**[VISUAL — NATIVE PPT: side-by-side, see deck-notes/helm-vs-kustomize.md. Keep code and trade-offs
+as editable text; do not generate this as an image.]**
 
 ### Slide 24 — Hvad Helm **ikke** er
 **Content:**
@@ -233,7 +340,7 @@ versioning and distribution — and because everything you want to *install* is 
 - ❌ Ikke en garanti for at din app virker
 
 **Notes:** Stating the limits early buys credibility for everything else, and each ❌ is picked up
-later: CD on slide 58, secrets on 57, reconciliation on 22, and "your app still has to work" the
+later: CD on slide 59, secrets on 58, reconciliation on 22, and "your app still has to work" the
 moment their first Pod CrashLoops.
 
 ### Slide 25 — Kommandoerne I får brug for
@@ -245,6 +352,8 @@ helm lint / package / push             helm show values     # what knobs does it
 ```
 **Notes:** They don't need to memorise it — `README.md` has the reference. Point at
 `helm show values <chart>` as the single most useful command when meeting a chart you didn't write.
+For an installed release, `helm get values greetings --revision 3 -n prod` retrieves the values
+used by that historical revision.
 
 ---
 
@@ -279,13 +388,40 @@ demo it in 30 seconds; the next section is much easier with that failure fresh.
 
 ### Slide 30 — Go templates på 60 sekunder
 **Content:**
+
+Helm bygger på Go-standardbibliotekets template engine, udvidet med Helm-objekter og funktioner fra
+Sprig.
+
 - `{{ .Values.replicaCount }}` — indsæt en værdi
 - `{{ .Values.name | quote }}` — pipe gennem en funktion
 - `{{- if ... }} ... {{- end }}` — betingelse
 - `{{ include "chart.fullname" . }}` — genbrug et named template
 
-**Notes:** Deliberately minimal. They'll learn the rest by doing, and the exercise README has the
-same four lines as a cheat-sheet.
+**To mønstre I møder hurtigt:**
+
+```yaml
+image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+```
+
+```yaml
+metadata:
+  {{- with .Values.podAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+```
+
+**Notes:** Go templates come from Go's standard `text/template` package. Helm chose an existing,
+small template language from its own implementation ecosystem rather than inventing one. What we
+call "Helm templates" is Go templates plus Helm's built-in objects and functions, with most of the
+additional general-purpose functions supplied by Sprig.
+
+Keep the first four lines as the syntax key. For the first advanced example, explain only the data
+flow: use `image.tag` when supplied; otherwise use the chart's `appVersion`. For the second, say
+that `with` runs only when annotations exist, changes what `.` points at inside the block, and
+`toYaml | nindent 4` turns the map back into correctly indented YAML. Slides 35–36 unpack scope and
+whitespace; this is only a preview of what real chart code looks like. The exercise README retains
+the four-line version as its cheat-sheet.
 
 ### Slide 31 — De indbyggede objekter
 **Content:** `.Values` · `.Release` (`.Name`, `.Namespace`, `.Revision`, `.Service`) · `.Chart`
@@ -299,7 +435,8 @@ on the right. Highlight only the changed lines.
 **Notes:** **This slide replaces any explanation of templating.** They wrote the left-hand side by
 hand six weeks ago. The diff is small and self-evident: the parts that vary per environment became
 values, everything else is untouched. Let the room read it. Don't narrate the syntax.
-**[VISUAL: two-column diff, module 5 backend.yaml vs the templated version. Highlight ONLY changed lines.]**
+**[VISUAL — LIVE CODE/SCREENSHOT: two-column diff, module 5 backend.yaml vs the templated version.
+Highlight ONLY changed lines.]**
 
 ### Slide 33 — `_helpers.tpl`
 **Content:**
@@ -316,7 +453,8 @@ values, everything else is untouched. Let the room read it. Don't narrate the sy
 **Notes:** The payoff for slide 6. Three hand-maintained agreements collapse into one computed
 value used in both places. This is the most convincing argument for templating in the whole deck
 because they personally felt the pain.
-**[VISUAL: three circled values converging into one helper definition.]**
+**[VISUAL — NATIVE PPT: three circled values converging into one helper definition. Use exact code
+snippets, with the repeated hostname in one accent colour.]**
 
 ### Slide 35 — Betingede blokke
 **Content:** `{{- if .Values.ingress.enabled }}` · `{{- with .Values.annotations }}` ·
@@ -442,7 +580,8 @@ cannot read its parent's values
 Add the limitation that bites fast: values files are **plain YAML, not templates**, so a parent
 can't *compute* a value to pass down. That's why the shared Secret name in the reference chart is a
 convention derived from `.Release.Name` in both charts.
-**[VISUAL: parent/child value scoping — see deck-notes/values-precedence.md]**
+**[VISUAL — NATIVE PPT: parent/child value scoping — see deck-notes/values-precedence.md. Use nested
+chart boxes and three short callouts: parent, child, global.]**
 
 ### Slide 50 — Umbrella charts
 **Content:** one chart whose only job is to depend on several others — a whole platform as one
@@ -469,7 +608,8 @@ Job waits for a database Helm hasn't created, until `--timeout` kills the instal
 `post-install` + `pre-upgrade` gives the right ordering: migrate, then roll out the code that needs
 the migration. Walk through the comment at the top of
 [`templates/job-migrate.yaml`](./edu-greetings-chart/templates/job-migrate.yaml).
-**[VISUAL: timeline — pre-install hook runs BEFORE manifests exist (✗) vs post-install (✓).]**
+**[VISUAL — NATIVE PPT: two short timelines — pre-install runs before the database exists (✗),
+post-install runs after it exists (✓). Reveal one at a time.]**
 
 ### Slide 53 — Fra init container til hook
 **Content:** module 5 BONUS 4's `initContainers:` → a hook Job.
@@ -506,15 +646,25 @@ helm install x oci://<registry>/<project>/greetings --version 1.0.0
 images. Same registry, same auth, same mental model. A chart version must mean exactly one thing
 forever, so registries reject re-pushing an existing version. Bump `version` every time.
 
-### Slide 58 — Secrets hører ikke i en values-fil
+### Slide 58 — Values & Secrets
 **Content:**
-- **External Secrets Operator** — henter fra Vault / Key Vault / AWS SM
-- **Sealed Secrets / SOPS** — krypteret, sikkert i git
-- **`existingSecret`** — chartet kender kun *navnet*
+- `values.yaml` indeholder konfiguration — **ikke credentials**
+- **Vault** opbevarer secrets
+- **External Secrets Operator** henter dem og opretter almindelige Kubernetes Secrets
+- Chartet kender kun **Secret-navnet og key'en** — fx `existingSecret`
 
-**Notes:** Show the number: `edu-greetings-chart`'s `values-prod.yaml` renders **zero** Secrets,
-because it names one instead of containing one. Tie forward to the open lab's governance rule —
-they're about to touch their own real config.
+`Vault → External Secrets Operator → Kubernetes Secret → Pod`
+
+**Notes:** Keep Vault and External Secrets Operator at the level of the flow above — how they are
+configured and authenticated is a platform concern, not part of this workshop. The chart-author
+takeaway is the interface: accept a Secret name and key, then use them through `secretKeyRef`.
+Show `database.existingSecret: greetings-db-credentials` from `edu-greetings-chart`'s
+`values-prod.yaml`, and the number: it renders **zero** Secrets because it names one instead of
+containing one. Tie forward to the open lab's governance rule — they're about to touch their own
+real config.
+**[VISUAL — GENERATED IMAGE: a secure Vault on the left, a small operator/controller in the centre,
+then a Kubernetes Secret and Pod on the right. Four objects, one-way arrows, no credentials visible.
+Include the labels `Vault`, `External Secrets Operator`, `Kubernetes Secret` and `Pod`.]**
 
 ### Slide 59 — Hvem kører egentlig `helm upgrade`? ⭐
 **Content:** laptop → cluster (❌ no audit trail, creds on laptops) vs git → ArgoCD/Flux → cluster
@@ -523,7 +673,9 @@ they're about to touch their own real config.
 provokes: someone ran 266 upgrades — who? Not a person. Callback to slide 22: Helm renders and
 stops caring; a GitOps controller reconciles continuously. **This is the honest boundary of what
 today taught.**
-**[VISUAL: the two loops — see deck-notes/gitops-loop.md]**
+**[VISUAL — GENERATED IMAGE: the two deployment paths — laptop → cluster versus developer → git →
+GitOps controller → cluster. See deck-notes/gitops-loop.md; include short object labels and keep the
+❌/✓ comparison bullets in PowerPoint.]**
 
 ### Slide 60 — Merkur, for alvor
 **Content:** Apps → Installed Apps → `merkur` · revision 266+ · one release, ~9 components
@@ -568,7 +720,11 @@ can-we gate — cheapest question, and it's disqualifying.
 
 Dwell on the Eliminate branch for 20 seconds. A migration process with no "don't" outcome is a
 machine for moving technical debt to a newer platform.
-**[VISUAL: the funnel — see deck-notes/migration-pipeline.md, top half]**
+**[VISUAL — HYBRID: use `deck-assets/generated/slide-62a-selection-prioritisation-v1.png` as the
+base, then replace its placeholder bullets in native PowerPoint. Under **Udvælgelse**, use concise
+examples: `Container-support`, `Licens / afregning`, `Særligt hardware`, `TIME / livscyklus`.
+Under **Prioritering**, use: `Kompleksitet`, `Udgivelsesfrekvens`, `Driftsbyrde`, `Skalerbarhed`,
+`Sårbarhed`, `Teamets egen`. Keep Eliminate as a clearly visible side exit.]**
 
 ### Slide 62b — Processen, og hvem der gør hvad
 **Content:** the six steps as swimlanes — Dev owns 1–4, step 5 is joint, Platform owns 6. Plus the
@@ -594,7 +750,8 @@ If you put its `values.yaml` on screen, one free habit to point out: its dev dum
 like real ones, whereas `values_kind.yaml` uses `"abc"` and `"pw"`. **Make placeholders obviously
 fake** — `"dummy-dev-only"` — so nobody has to ask whether they're looking at a leak. See
 [`deck-notes/migration-pipeline.md`](./deck-notes/migration-pipeline.md).
-**[VISUAL: the swimlane — see deck-notes/migration-pipeline.md]**
+**[VISUAL — NATIVE PPT: the ownership swimlane — see deck-notes/migration-pipeline.md. Exact step,
+owner and workshop labels must stay editable; use builds/animation to control density.]**
 
 ### Slide 63 — Briefen
 **Content:**

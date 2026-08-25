@@ -6,15 +6,15 @@ silent: your value is simply ignored and you don't know why.
 ## Suggested visual (ASCII sketch to redraw as a diagram)
 
 ```
-  LOWEST PRECEDENCE                                        HIGHEST
-  ─────────────────────────────────────────────────────────────────►
+  LOWEST PRECEDENCE                                 HIGHEST
+  ─────────────────────────────────────────────────────── ►
 
-  ┌──────────────┐  ┌───────────┐  ┌───────────┐  ┌──────┐  ┌────────────┐
-  │  subchart    │  │  chart's  │  │  -f a.yml │  │--set │  │--set-string│
-  │  values.yaml │  │ values.yaml│ │  -f b.yml │  │      │  │            │
-  └──────────────┘  └───────────┘  └───────────┘  └──────┘  └────────────┘
-                                    later -f wins
-                                    over earlier -f
+  ┌──────────────┐  ┌────────────┐  ┌───────────┐  ┌──────┐
+  │  subchart    │  │  chart's   │  │  -f a.yml │  │--set │
+  │  values.yaml │  │ values.yaml│  │  -f b.yml │  │      │
+  └──────────────┘  └────────────┘  └───────────┘  └──────┘
+                                      later -f wins
+                                      over earlier -f
 
 
   MERGING IS PER-KEY, NOT PER-FILE
