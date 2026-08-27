@@ -1,37 +1,33 @@
-# Helm CLI demo — the hook (facilitator)
+# Helm CLI demo
 
-**~15 minutes, run at the front of the room.** The appetiser: the whole module-5 system, as one
-command.
+**~15 minutes appetizer**: the whole module-5 system, as one command.
 
-This mirrors the CLI demos in workshops #1 and #2. Where #1 ran one container and #2 kept workloads
-running on a cluster, this one shows the system **packaged** — installable, configurable,
+Mirrors the CLI demos in workshops #1 and #2. Where #1 ran one container and #2 kept workloads
+running on a cluster. This one shows the system **packaged** — installable, configurable,
 versioned and reversible.
 
-> **Prep before the room fills up:**
+> **Prep before demo:**
 > ```bash
-> kubectl config use-context rancher-desktop     # ⚠️ not a real cluster
+> kubectl config use-context rancher-desktop      # ⚠️ not a real cluster
 > helm dependency update ./edu-greetings-chart    # optional; Helm prefers the source subchart
 > docker pull ghcr.io/notalib/workshop-containerisation/edu-spring-boot:1.2
 > docker pull postgres:18.3-alpine3.23
 > ```
-> Pre-pulling matters — a cold pull of the Spring image in front of 20 people is a long silence.
->
-> **Tight on time?** Sections 1–3 and 6 carry the whole argument. Cut 5, 7 and 8 first.
 
 ---
 
-# 0. The setup: what they did last time
+# 0. Where we ended last time
 
-Have workshop #2's module 5 open on screen — four YAML files, ~180 lines, applied by hand in a
-specific order, with the "three things must agree" warning about `POSTGRES_HOST`.
+Workshop #2's module 5 — four YAML files, ~180 lines, applied by hand in a
+specific order, with things that must agree, e.g. `POSTGRES_HOST`.
 
-Ask the question the teaser ended on:
+Teaser we ended on:
 
-> *"Do I really copy-paste all this YAML for every app and every environment?"*
+> *"Do I really copy-paste and apply all this YAML for every app and every environment?"*
 
 ---
 
-# 1. One command, the whole system
+# 1. One command, an entire system installed & ready
 
 ```bash
 helm install dev ./edu-greetings-chart --namespace dev --create-namespace
@@ -74,8 +70,6 @@ helm template ./edu-greetings-chart | head -20     # same rendering, no cluster 
 ## Observations
 
 - Helm is a **template engine plus a release ledger**. Its job ends at the API server.
-- Everything after that — ReplicaSets, scheduling, self-healing, probes — is the Kubernetes they
-  already know.
 - There is **no Helm server**. It's a CLI and some Secrets in the namespace:
   ```bash
   kubectl get secret -n dev -l owner=helm
@@ -106,13 +100,7 @@ diff edu-greetings-chart/values-dev.yaml edu-greetings-chart/values-prod.yaml
 
 ## Observations
 
-- One artifact, many environments. The difference between dev and prod is a **reviewable file in
-  git**, not a folder of divergent YAML.
-- Note what prod does *not* contain: a password. It names an existing Secret instead.
-  ```bash
-  helm template p ./edu-greetings-chart -f edu-greetings-chart/values-prod.yaml | grep -c "kind: Secret"
-  # 0
-  ```
+- One artifact, many environments. The difference between dev and prod is a **reviewable file in git**, not a folder of divergent YAML.
 
 ---
 
@@ -135,57 +123,63 @@ helm get values dev -n dev --revision 1
 
 ---
 
-# 5. See the change before you make it
+# 6. Break it on purpose - rollback on failure
 
-```bash
-helm diff upgrade dev ./edu-greetings-chart -n dev -f edu-greetings-chart/values-prod.yaml
-```
-
-## Observations
-
-- This is `terraform plan` for Kubernetes, and it's the plugin most teams make mandatory.
-
-*(Skip if the plugin isn't installed.)*
-
----
-
-# 6. Break it on purpose — and watch it undo itself
-
-The payoff. Deploy an image that doesn't exist:
-
-```bash
-helm upgrade dev ./edu-greetings-chart -n dev \
-  --set image.tag=this-tag-does-not-exist \
-  --rollback-on-failure --timeout 60s
-```
-
-While it waits, in a second terminal:
+Before we upgrade, let's monitor Pod changes:
 
 ```bash
 kubectl get pods -n dev -w      # new Pod stuck ImagePullBackOff, old Pods still serving
 ```
 
-Then it fails — and rolls itself back:
+Now let's try upgrading to an image that doesn't exist:
 
 ```bash
-helm history dev -n dev         # the failure AND the rollback are both recorded
+helm upgrade dev ./edu-greetings-chart -n dev \
+  --set image.tag=this-tag-does-not-exist \
+  --rollback-on-failure --timeout 20s
+```
+
+It should fail — **and rollback by itself to a working state**:
+
+```bash
+helm history dev -n dev         # failure AND rollback are both recorded
 curl -H "Host: greetings.localhost" http://127.0.0.1/greetings    # never stopped working
 ```
 
 ## Observations
 
-- The bad version **never served traffic** — same protection as workshop #2's broken rollout, now
-  wrapped in one flag.
-- Failure left nothing half-deployed. Compare: a `kubectl apply` that fails halfway leaves you to
-  work out what landed.
-- `--rollback-on-failure` was `--atomic` in Helm 3. Say this out loud — every blog post they find
-  will use the old name.
+- The bad version **never served traffic** — same protection as workshop #2's broken rollout, now, now wrapped in one flag.
+- `--rollback-on-failure` was `--atomic` in Helm 3. Lots of blog posts will refer to the old name.
 - It only rolls *back*. A failed **first** install has no previous revision, so Helm uninstalls
   instead.
 
 ---
 
-# 7. A release that tests itself
+# 7. Create a new chart
+
+Quickly scaffold a new chart
+
+```bash
+helm create my-chart
+```
+- Warning: Contains stuff you won't need. Could be better to start from `edu-greetings-chart` or existing simple chart. Delete templating you don't need - keep it simple at first!
+
+# Extras
+
+## See the upgrade diff before you execute it
+
+```bash
+# Requires plugin helm-diff
+helm plugin install --verify=false https://github.com/databus23/helm-diff
+
+helm diff upgrade dev ./edu-greetings-chart -n dev -f edu-greetings-chart/values-prod.yaml
+```
+
+- This is `terraform plan` for Kubernetes, and it's the plugin most teams make mandatory.
+
+---
+
+## Make the release test itself
 
 ```bash
 helm test dev -n dev
@@ -193,14 +187,12 @@ helm test dev -n dev
 
 A Pod curls the API and greps for a seeded row. Exit code non-zero = failed release.
 
-## Observations
-
 - This is what lets a pipeline promote a release without a human clicking around: deploy,
   `helm test`, roll back on failure.
 
 ---
 
-# 8. In the Rancher UI
+## Install helm charts from Rancher UI
 
 Rancher Desktop → **Cluster Dashboard** → **Apps → Installed Apps**.
 
@@ -213,7 +205,7 @@ history — not a loose pile of Pods and Services. They can upgrade or uninstall
 
 ---
 
-# 9. Cleanup
+# Cleanup
 
 ```bash
 helm uninstall dev -n dev

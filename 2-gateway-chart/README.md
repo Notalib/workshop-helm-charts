@@ -1,10 +1,14 @@
 # 2 — The gateway chart: templating, environments, rollback
 
-Module 1's chart had three values and hardcoded everything else. This one is a realistic small
-chart — an **nginx gateway with an http-echo backend beside it in the same Pod**, plus a Service
-and an Ingress — and it is riddled with hardcoded values that *should* come from `values.yaml`.
+Module 1's chart had three values and hardcoded everything else.
 
-Your job: find them and template them. Then run the same chart as dev and as prod, break it, and
+This one is a realistic small chart:
+— An **nginx gateway**
+- A **http-echo backend** beside it in the same Pod
+- A Service + Ingress
+- All riddled with hardcoded values that *should* come from `values.yaml`.
+
+Your job: Find them and template them. Then run the same chart as dev and as prod, break it, and
 roll it back.
 
 > **`values.yaml`** — the chart's *defaults*, and its API. Anything not in here is not

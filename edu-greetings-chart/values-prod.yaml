@@ -53,4 +53,4 @@ postgres:
     size: 20Gi
     # Name the class explicitly in prod. Relying on "whatever the default is"
     # means your storage tier changes when a cluster admin edits a StorageClass.
-    storageClass: longhorn
+    # storageClass: longhorn
