@@ -51,10 +51,7 @@ You should get "Gateway is up for gw" and "Hello from backend". If `curl` hangs 
 before templating anything — see **Stuck?** at the bottom.
 
 > **Why `-L` on the second one?** The chart's nginx config deliberately redirects `/api` → `/api/`
-> with a 308, so that both spellings work. Without `-L`, `curl` shows you the redirect instead of
-> following it, and you'd conclude the backend is broken when it isn't. Drop the `-L` once to see
-> it — misreading a redirect as a failure is a genuinely common half-hour.
-
+> with a 308, so that both spellings work. Without `-L`, `curl` shows you the redirect instead of following it, and you'd conclude the backend is broken when it isn't.
 ---
 
 ## TASK 2: Find the hardcoding
@@ -82,11 +79,11 @@ matching value in `values.yaml`?** That is the actual bug class you're fixing.
 Fill in the nine `TODO`s. Useful syntax:
 
 ```
-{{ .Values.replicaCount }}                  a value
-{{ .Values.image.nginx }}                   a nested value
-{{ .Values.backend.text | quote }}          pipe through a function
-{{- if .Values.api.enabled }} ... {{- end }} conditional block
-{{ include "gateway.fullname" . }}          a named template from _helpers.tpl
+{{ .Values.replicaCount }}                    a value
+{{ .Values.image.nginx }}                     a nested value
+{{ .Values.backend.text | quote }}            pipe through a function
+{{- if .Values.api.enabled }} ... {{- end }}  conditional block
+{{ include "gateway.fullname" . }}            a named template from _helpers.tpl
 ```
 
 Work in a fast loop — you do **not** need a cluster to check your work:
@@ -121,13 +118,20 @@ kubectl get pods -l app.kubernetes.io/instance=gw   # must reach 1/1 Ready, not 
 curl -iL -H "Host: gateway.localhost" http://127.0.0.1/api
 ```
 
-> **If the Pod sits at `0/1 Running`**, your probes are still pointing at port 80 while nginx now
-> listens on 8080. The container is fine; the *probe* is failing, so the Pod never joins the
-> Service's endpoints and the Ingress has nowhere to send traffic. This is the single most common
-> real-world Helm bug: one value templated in four places and missed in a fifth.
+> If it breaks the app, you probably didn't template the manifests consistently.
 
----
+> **If the Pod sits at `0/1 Running`**, your probes are still pointing at port 80 while nginx now listens on 8080.
+>
+> The container is fine; the *probe* is failing, so the Pod never joins the Service's endpoints and the Ingress has nowhere to send traffic. This is the single most common real-world Helm bug: one value templated in four places and missed in a fifth.
 
+>
+> **If you can't reach the app via your browser** , you likely forgot to template the service port in `ingress.yml`.
+Try skipping the Ingress:
+ `kubectl port-forward service/gw-gateway 8888:8080`
+Or forward directly to the Deployment:
+`kubectl port-forward deploy/gw-service 8888:9000`
+Open [localhost:8888](http://localhost:8888) at each step, make sure the :TARGET port matches your value.
+This should give you a hint where it breaks...
 ## TASK 4: One chart, two environments
 
 This is why charts exist. Same chart, different values file:
