@@ -97,8 +97,18 @@ helm template ./ --set service.port=8080 | grep -n 8080
 ### Definition of done
 
 ```bash
-helm lint ./              # passes
-helm template ./          # renders valid YAML
+# Level 1
+helm lint ./               # chart checks pass
+helm template ./           # the manifests look correct
+
+# Level 2
+# Validate that templated manifests would actually apply on Kubernetes.
+helm template ./ | kubectl apply --dry-run=server -f -
+
+# Level 3
+# The above is basically what helm does for you when you `helm install`.
+# This ALSO simulates the upgrade/install procedure:
+helm upgrade --install gw ./ --dry-run=server
 ```
 
 And each value actually controls what it claims to:
@@ -125,13 +135,17 @@ curl -iL -H "Host: gateway.localhost" http://127.0.0.1/api
 > The container is fine; the *probe* is failing, so the Pod never joins the Service's endpoints and the Ingress has nowhere to send traffic. This is the single most common real-world Helm bug: one value templated in four places and missed in a fifth.
 
 >
-> **If you can't reach the app via your browser** , you likely forgot to template the service port in `ingress.yml`.
+> **If you can't reach the app via your browser** , you're not done templating!
+Maybe you forgot to template the service port in `ingress.yml`?
 Try skipping the Ingress:
  `kubectl port-forward service/gw-gateway 8888:8080`
 Or forward directly to the Deployment:
 `kubectl port-forward deploy/gw-service 8888:9000`
 Open [localhost:8888](http://localhost:8888) at each step, make sure the :TARGET port matches your value.
 This should give you a hint where it breaks...
+
+---
+
 ## TASK 4: One chart, two environments
 
 This is why charts exist. Same chart, different values file:
