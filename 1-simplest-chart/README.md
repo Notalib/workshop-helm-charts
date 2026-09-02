@@ -34,8 +34,9 @@ helm list
 
 ```bash
 kubectl port-forward deploy/simplest-nginx 8888:80
-# open http://localhost:8888 — the default nginx welcome page
 ```
+
+Open [http://localhost:8888](http://localhost:8888) — the default nginx welcome page
 
 Now look at what Helm created, using plain `kubectl` — nothing here is Helm-specific:
 
@@ -51,8 +52,11 @@ The chart exposes three knobs. Turn them with `--set`:
 
 ```bash
 helm upgrade simple ./ --set overrideHtml=true
-kubectl port-forward deploy/simplest-nginx 8888:80
 ```
+
+Then port-forward again, but remember to **hard-refresh your browser!**
+
+`kubectl port-forward deploy/simplest-nginx 8888:80`
 
 **What happened to the website?** Look at [`templates/deployment.yaml`](./templates/deployment.yaml)
 and find the `{{ if .Values.overrideHtml }}` block — a whole `volumeMounts` + `volumes` section
